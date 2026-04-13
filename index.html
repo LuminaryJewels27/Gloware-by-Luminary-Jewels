@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Bracelet Setup</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #242837;
+    --border: #2e3347;
+    --text: #e8eaed;
+    --text2: #9aa0b0;
+    --accent: #7c6aff;
+    --accent2: #a78bfa;
+    --green: #34d399;
+    --red: #f87171;
+    --radius: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container { max-width: 480px; margin: 0 auto; }
+  h1 {
+    font-size: 1.5rem;
+    text-align: center;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle { text-align:center; color:var(--text2); font-size:0.85rem; margin-bottom:24px; }
+
+  /* Connection */
+  .connect-section { text-align:center; margin-bottom:24px; }
+  .btn-connect {
+    background: var(--accent);
+    color:#fff; border:none; padding:14px 32px;
+    border-radius: var(--radius); font-size:1rem;
+    cursor:pointer; font-weight:600;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn-connect:hover { opacity:0.9; transform:scale(1.02); }
+  .btn-connect:disabled { opacity:0.4; cursor:default; transform:none; }
+  .status {
+    margin-top:10px; font-size:0.8rem; color:var(--text2);
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .dot.off { background:var(--red); }
+  .dot.on  { background:var(--green); }
+
+  /* Time Sync */
+  .time-bar {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:12px 16px;
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:24px;
+  }
+  .time-bar span { color:var(--text2); font-size:0.85rem; }
+  .btn-sm {
+    background:var(--surface2); color:var(--text); border:1px solid var(--border);
+    padding:8px 16px; border-radius:8px; font-size:0.8rem;
+    cursor:pointer;
+  }
+  .btn-sm:hover { border-color:var(--accent); }
+
+  /* Reminder List */
+  .section-title {
+    font-size:0.75rem; text-transform:uppercase; letter-spacing:1px;
+    color:var(--text2); margin-bottom:12px;
+  }
+  .reminder-list { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+  .reminder-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:14px;
+    display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px;
+    position:relative;
+  }
+  .color-dot {
+    width:32px; height:32px; border-radius:50%;
+    border:2px solid rgba(255,255,255,0.1);
+  }
+  .reminder-info .time { font-weight:600; font-size:1rem; }
+  .reminder-info .label { color:var(--text2); font-size:0.8rem; }
+  .reminder-actions { display:flex; gap:6px; }
+  .btn-icon {
+    background:none; border:none; color:var(--text2);
+    cursor:pointer; font-size:1.1rem; padding:4px;
+  }
+  .btn-icon:hover { color:var(--red); }
+
+  /* Add Form */
+  .add-form {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:16px;
+    margin-bottom:16px;
+  }
+  .form-row { display:flex; gap:10px; margin-bottom:12px; }
+  .form-group { flex:1; }
+  .form-group label { display:block; font-size:0.75rem; color:var(--text2); margin-bottom:4px; }
+  .form-group input, .form-group select {
+    width:100%; background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; padding:10px; color:var(--text); font-size:0.9rem;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline:none; border-color:var(--accent);
+  }
+  .color-presets { display:flex; gap:6px; flex-wrap:wrap; }
+  .color-btn {
+    width:32px; height:32px; border-radius:50%; border:2px solid transparent;
+    cursor:pointer; transition:border-color 0.2s;
+  }
+  .color-btn.selected, .color-btn:hover { border-color:#fff; }
+
+  .btn-add {
+    width:100%; background:var(--accent); color:#fff; border:none;
+    padding:12px; border-radius:8px; font-size:0.9rem; font-weight:600;
+    cursor:pointer;
+  }
+  .btn-add:hover { opacity:0.9; }
+
+  /* Send */
+  .btn-send {
+    width:100%; background:linear-gradient(135deg, var(--accent), var(--green));
+    color:#fff; border:none; padding:14px; border-radius:var(--radius);
+    font-size:1rem; font-weight:600; cursor:pointer; margin-top:8px;
+  }
+  .btn-send:hover { opacity:0.9; }
+  .btn-send:disabled { opacity:0.3; cursor:default; }
+
+  .empty { text-align:center; color:var(--text2); padding:24px; font-size:0.9rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>✦ Smart Bracelet</h1>
+  <p class="subtitle">Program your reminder schedule</p>
+
+  <!-- Connect -->
+  <div class="connect-section">
+    <button class="btn-connect" id="btnConnect" onclick="connectBLE()">Connect via Bluetooth</button>
+    <div class="status">
+      <span class="dot off" id="statusDot"></span>
+      <span id="statusText">Not connected</span>
+    </div>
+  </div>
+
+  <!-- Time Sync -->
+  <div class="time-bar">
+    <span>Sync phone time to bracelet</span>
+    <button class="btn-sm" onclick="syncTime()">Sync Clock</button>
+  </div>
+
+  <!-- Reminders -->
+  <div class="section-title">Reminders</div>
+  <div class="reminder-list" id="reminderList">
+    <div class="empty">No reminders yet. Add one below.</div>
+  </div>
+
+  <!-- Add Reminder Form -->
+  <div class="add-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Time</label>
+        <input type="time" id="inputTime" value="08:00">
+      </div>
+      <div class="form-group">
+        <label>Label</label>
+        <input type="text" id="inputLabel" placeholder="Take medication" maxlength="23">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Color</label>
+        <div class="color-presets" id="colorPresets"></div>
+      </div>
+      <div class="form-group">
+        <label>Vibration</label>
+        <select id="inputVib">
+          <option value="0">Short buzz</option>
+          <option value="1">Long buzz</option>
+          <option value="2">Triple pulse</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-add" onclick="addReminder()">+ Add Reminder</button>
+  </div>
+
+  <button class="btn-send" id="btnSend" onclick="sendReminders()" disabled>
+    Send All to Bracelet
+  </button>
+</div>
+
+<script>
+  // ===== BLE State =====
+  let bleDevice = null;
+  let charReminders = null;
+  let charTime = null;
+  let charStatus = null;
+
+  const SERVICE_UUID        = '12345678-1234-1234-1234-123456789abc';
+  const CHAR_REMINDERS_UUID = 'abcd1234-5678-9abc-def0-123456789001';
+  const CHAR_TIME_UUID      = 'abcd1234-5678-9abc-def0-123456789002';
+  const CHAR_STATUS_UUID    = 'abcd1234-5678-9abc-def0-123456789003';
+
+  // ===== Reminder Data =====
+  let reminders = [];
+
+  const PRESET_COLORS = [
+    { name:'Yellow',  r:255, g:220, b:0   },
+    { name:'Blue',    r:0,   g:100, b:255 },
+    { name:'Green',   r:0,   g:255, b:80  },
+    { name:'Purple',  r:180, g:0,   b:255 },
+    { name:'Red',     r:255, g:50,  b:50  },
+    { name:'Cyan',    r:0,   g:255, b:255 },
+    { name:'Orange',  r:255, g:140, b:0   },
+    { name:'Pink',    r:255, g:100, b:180 },
+    { name:'White',   r:255, g:255, b:255 },
+  ];
+  let selectedColor = PRESET_COLORS[0];
+
+  // ===== Init Color Presets =====
+  function initColors() {
+    const container = document.getElementById('colorPresets');
+    PRESET_COLORS.forEach((c, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'color-btn' + (i === 0 ? ' selected' : '');
+      btn.style.background = `rgb(${c.r},${c.g},${c.b})`;
+      btn.title = c.name;
+      btn.onclick = () => {
+        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedColor = c;
+      };
+      container.appendChild(btn);
+    });
+  }
+  initColors();
+
+  // ===== BLE Connection =====
+  async function connectBLE() {
+    try {
+      const btn = document.getElementById('btnConnect');
+      btn.textContent = 'Searching...';
+      btn.disabled = true;
+
+      bleDevice = await navigator.bluetooth.requestDevice({
+        filters: [{ name: 'SmartBracelet' }],
+        optionalServices: [SERVICE_UUID]
+      });
+
+      bleDevice.addEventListener('gattserverdisconnected', onDisconnect);
+
+      const server = await bleDevice.gatt.connect();
+      const service = await server.getPrimaryService(SERVICE_UUID);
+
+      charReminders = await service.getCharacteristic(CHAR_REMINDERS_UUID);
+      charTime      = await service.getCharacteristic(CHAR_TIME_UUID);
+      charStatus    = await service.getCharacteristic(CHAR_STATUS_UUID);
+
+      // Listen for status notifications
+      await charStatus.startNotifications();
+      charStatus.addEventListener('characteristicvaluechanged', (e) => {
+        const dec = new TextDecoder();
+        console.log('Status:', dec.decode(e.target.value));
+      });
+
+      setConnected(true);
+      btn.textContent = 'Connected ✓';
+    } catch (err) {
+      console.error(err);
+      setConnected(false);
+      const btn = document.getElementById('btnConnect');
+      btn.textContent = 'Connect via Bluetooth';
+      btn.disabled = false;
+      if (err.name !== 'NotFoundError') {
+        alert('Connection failed: ' + err.message);
+      }
+    }
+  }
+
+  function onDisconnect() {
+    setConnected(false);
+    const btn = document.getElementById('btnConnect');
+    btn.textContent = 'Reconnect';
+    btn.disabled = false;
+    charReminders = null;
+    charTime = null;
+    charStatus = null;
+  }
+
+  function setConnected(yes) {
+    document.getElementById('statusDot').className = 'dot ' + (yes ? 'on' : 'off');
+    document.getElementById('statusText').textContent = yes ? 'Connected' : 'Not connected';
+    document.getElementById('btnSend').disabled = !yes;
+  }
+
+  // ===== Sync Time =====
+  async function syncTime() {
+    if (!charTime) { alert('Connect to bracelet first'); return; }
+    const now = new Date();
+    const timeStr = [
+      String(now.getHours()).padStart(2,'0'),
+      String(now.getMinutes()).padStart(2,'0'),
+      String(now.getSeconds()).padStart(2,'0')
+    ].join(':');
+    const enc = new TextEncoder();
+    await charTime.writeValue(enc.encode(timeStr));
+    alert('Clock synced to ' + timeStr);
+  }
+
+  // ===== Reminder Management =====
+  function addReminder() {
+    const timeVal = document.getElementById('inputTime').value;
+    const label   = document.getElementById('inputLabel').value || 'Reminder';
+    const vib     = parseInt(document.getElementById('inputVib').value);
+
+    if (!timeVal) return;
+    const [h, m] = timeVal.split(':').map(Number);
+
+    reminders.push({
+      h, m,
+      r: selectedColor.r, g: selectedColor.g, b: selectedColor.b,
+      v: vib, on: true, l: label
+    });
+
+    // Sort by time
+    reminders.sort((a, b) => a.h * 60 + a.m - b.h * 60 - b.m);
+    renderReminders();
+    document.getElementById('inputLabel').value = '';
+  }
+
+  function removeReminder(idx) {
+    reminders.splice(idx, 1);
+    renderReminders();
+  }
+
+  function renderReminders() {
+    const list = document.getElementById('reminderList');
+    if (reminders.length === 0) {
+      list.innerHTML = '<div class="empty">No reminders yet. Add one below.</div>';
+      return;
+    }
+    list.innerHTML = reminders.map((rm, i) => {
+      const timeStr = String(rm.h).padStart(2,'0') + ':' + String(rm.m).padStart(2,'0');
+      const ampm = rm.h >= 12 ? 'PM' : 'AM';
+      const h12 = rm.h % 12 || 12;
+      return `<div class="reminder-card">
+        <div class="color-dot" style="background:rgb(${rm.r},${rm.g},${rm.b})"></div>
+        <div class="reminder-info">
+          <div class="time">${h12}:${String(rm.m).padStart(2,'0')} ${ampm}</div>
+          <div class="label">${rm.l}</div>
+        </div>
+        <div class="reminder-actions">
+          <button class="btn-icon" onclick="removeReminder(${i})" title="Delete">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ===== Send to Bracelet =====
+  async function sendReminders() {
+    if (!charReminders) { alert('Connect to bracelet first'); return; }
+
+    const json = JSON.stringify({ reminders });
+    const enc = new TextEncoder();
+    const data = enc.encode(json);
+
+    // BLE has a ~512 byte MTU typical; chunk if needed
+    const CHUNK = 480;
+    for (let i = 0; i < data.length; i += CHUNK) {
+      const chunk = data.slice(i, i + CHUNK);
+      await charReminders.writeValue(chunk);
+      // Small delay between chunks
+      if (i + CHUNK < data.length) await new Promise(r => setTimeout(r, 100));
+    }
+
+    alert('✓ ' + reminders.length + ' reminders sent to bracelet!');
+  }
+
+  // ===== Load defaults for demo =====
+  function loadDefaults() {
+    reminders = [
+      { h:8,  m:0,  r:255,g:220,b:0,   v:0, on:true, l:'Take Medication' },
+      { h:15, m:0,  r:0,  g:100,b:255,  v:2, on:true, l:'Do Homework' },
+      { h:17, m:0,  r:0,  g:255,b:80,   v:1, on:true, l:'Go to Gym' },
+      { h:20, m:0,  r:180,g:0,  b:255,  v:2, on:true, l:'Do Homework' },
+      { h:21, m:0,  r:255,g:220,b:0,    v:0, on:true, l:'Take Medication' },
+    ];
+    renderReminders();
+  }
+  loadDefaults();
+</script>
+</body>
+</html>
