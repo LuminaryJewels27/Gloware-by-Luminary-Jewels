@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Luminary Jewels — Reminders, Reimagined</title>
+  <meta name="description" content="Smart jewelry that glows. Color-coded reminders delivered through light and vibration — no phone, no screen, no interruption.">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ── SHOP SECTION ── */
+    .shop-section {
+      background: var(--cream-dark);
+      padding: 7rem 5rem;
+    }
+
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 4rem;
+    }
+
+    .product-card {
+      background: var(--cream);
+      border: 1px solid rgba(201,168,76,0.15);
+      transition: border-color 0.3s, transform 0.3s;
+      cursor: pointer;
+    }
+
+    .product-card:hover {
+      border-color: rgba(201,168,76,0.5);
+      transform: translateY(-4px);
+    }
+
+    .product-image {
+      width: 100%;
+      aspect-ratio: 1;
+      background: linear-gradient(145deg, var(--purple) 0%, var(--purple-mid) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .product-image-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      opacity: 0.4;
+    }
+
+    .product-image-placeholder .glow-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201,168,76,0.8) 0%, transparent 70%);
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    .product-image-placeholder span {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(201,168,76,0.8);
+    }
+
+    .product-image.coming-soon::after {
+      content: 'Photo Coming Soon';
+      position: absolute;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(201,168,76,0.5);
+      white-space: nowrap;
+    }
+
+    .product-info {
+      padding: 1.5rem;
+    }
+
+    .product-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      font-weight: 400;
+      color: var(--purple);
+      margin-bottom: 0.4rem;
+    }
+
+    .product-desc {
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+      line-height: 1.8;
+      color: var(--text-light);
+      margin-bottom: 1.2rem;
+    }
+
+    .product-price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .product-price {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: var(--purple);
+    }
+
+    .product-price .founding {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gold);
+      display: block;
+      font-family: 'Josefin Sans', sans-serif;
+      font-weight: 300;
+    }
+
+    .product-price .original {
+      font-size: 0.9rem;
+      text-decoration: line-through;
+      color: var(--text-light);
+      margin-left: 0.5rem;
+    }
+
+    .add-to-cart {
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 0.6rem 1.2rem;
+      background: var(--purple);
+      color: var(--gold-light);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Josefin Sans', sans-serif;
+    }
+
+    .add-to-cart:hover {
+      background: var(--gold);
+      color: var(--purple);
+    }
+
+    .add-to-cart.notify {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+    }
+
+    .add-to-cart.notify:hover {
+      background: var(--gold);
+      color: var(--purple);
+    }
+
+    .sold-out-badge {
+      display: inline-block;
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.75rem;
+      border: 1px solid rgba(201,168,76,0.3);
+      color: rgba(201,168,76,0.5);
+    }
+
+    /* ── IMAGE GALLERY ── */
+    .gallery-section {
+      padding: 7rem 5rem;
+      background: var(--purple);
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 1rem;
+      margin-top: 4rem;
+    }
+
+    .gallery-item {
+      background: rgba(250,247,240,0.04);
+      border: 1px solid rgba(201,168,76,0.1);
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+      cursor: pointer;
+    }
+
+    .gallery-item:hover {
+      border-color: rgba(201,168,76,0.4);
+    }
+
+    .gallery-item:first-child {
+      grid-row: 1 / 3;
+      aspect-ratio: auto;
+    }
+
+    .gallery-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      opacity: 0.3;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .gallery-placeholder .big-glow {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201,168,76,0.6) 0%, transparent 70%);
+    }
+
+    .gallery-placeholder span {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(201,168,76,0.8);
+      line-height: 1.6;
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none; /* show when real images added */
+    }
+
+    /* Upload hint overlay */
+    .upload-hint {
+      position: absolute;
+      bottom: 0.75rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.5rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(201,168,76,0.3);
+      white-space: nowrap;
+    }
+
+    @media (max-width: 900px) {
+      .shop-grid { grid-template-columns: 1fr; }
+      .gallery-grid { grid-template-columns: 1fr 1fr; }
+      .gallery-item:first-child { grid-row: auto; }
+      .shop-section { padding: 4rem 2rem; }
+      .gallery-section { padding: 4rem 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">Luminary <span>Jewels</span></a>
+  <ul class="nav-links">
+    <li><a href="#shop">Shop</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="setup.html">Set Up Bracelet</a></li>
+  </ul>
+  <a href="#shop" class="nav-cta">Shop Now</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-eyebrow">Smart Jewelry · Handcrafted Resin · Rochester NY</div>
+    <h1 class="hero-title">
+      Reminders,<br>
+      <em>Reimagined.</em>
+    </h1>
+    <p class="hero-tagline">Jewelry that whispers instead of shouts.</p>
+    <p class="hero-desc">
+      The Luminary Jewels bracelet delivers color-coded reminders through gentle LED light and quiet vibration. No phone. No screen. No interruption. Just a soft glow on your wrist.
+    </p>
+    <div class="hero-buttons">
+      <a href="#shop" class="btn-primary">Shop Now</a>
+      <a href="#how-it-works" class="btn-secondary">See how it works</a>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="bracelet-ring"></div>
+    <div class="bracelet-ring"></div>
+    <div class="bracelet-ring"></div>
+    <div class="bracelet-mockup">
+      <div class="bracelet-glow"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SHOP -->
+<section class="shop-section" id="shop">
+  <div class="section-eyebrow">Founding Collection</div>
+  <h2 class="section-title">30 bracelets.<br><em>Yours to discover first.</em></h2>
+  <p style="font-size:0.75rem;letter-spacing:0.08em;line-height:1.9;color:var(--text-mid);max-width:36rem;margin-top:-0.5rem">
+    Our founding collection is limited to 30 hand-assembled bracelets. Founding members receive a special price and first access to every new resin face design we release.
+  </p>
+
+  <div class="shop-grid">
+
+    <!-- Product 1 — Starter Kit -->
+    <div class="product-card">
+      <div class="product-image coming-soon">
+        <div class="product-image-placeholder">
+          <div class="glow-circle"></div>
+          <span>Starter Kit</span>
+        </div>
+      </div>
+      <div class="product-info">
+        <h3 class="product-name">Luminary Jewels Starter Kit</h3>
+        <p class="product-desc">Everything you need to begin. Includes the smart bracelet, your choice of watch band, and one hand-poured resin face.</p>
+        <div class="product-price-row">
+          <div class="product-price">
+            <span class="founding">Founding Price</span>
+            $79.99
+            <span class="original">$99.99</span>
+          </div>
+          <button class="add-to-cart notify" onclick="notifyMe('Starter Kit')">Notify Me</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product 2 — Extra Resin Face -->
+    <div class="product-card">
+      <div class="product-image coming-soon">
+        <div class="product-image-placeholder">
+          <div class="glow-circle"></div>
+          <span>Resin Face</span>
+        </div>
+      </div>
+      <div class="product-info">
+        <h3 class="product-name">Interchangeable Resin Face</h3>
+        <p class="product-desc">Each face is hand-poured and one of a kind. Swaps on magnetically in seconds. Available in limited colorways.</p>
+        <div class="product-price-row">
+          <div class="product-price">
+            <span class="founding">Per Face</span>
+            $22.00
+          </div>
+          <button class="add-to-cart notify" onclick="notifyMe('Resin Face')">Notify Me</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product 3 — Watch Band -->
+    <div class="product-card">
+      <div class="product-image coming-soon">
+        <div class="product-image-placeholder">
+          <div class="glow-circle"></div>
+          <span>Watch Band</span>
+        </div>
+      </div>
+      <div class="product-info">
+        <h3 class="product-name">Interchangeable Watch Band</h3>
+        <p class="product-desc">Swap your band to match any outfit. Available in silicone and leather styles. Standard 20mm spring bar attachment.</p>
+        <div class="product-price-row">
+          <div class="product-price">
+            <span class="founding">Per Band</span>
+            $18.00
+          </div>
+          <button class="add-to-cart notify" onclick="notifyMe('Watch Band')">Notify Me</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Shopify Buy Button placeholder -->
+  <div id="shopify-buy-button" style="margin-top:3rem;display:none">
+    <!-- Paste your Shopify Buy Button code here when ready -->
+  </div>
+
+  <p style="font-size:0.68rem;letter-spacing:0.1em;color:var(--text-light);margin-top:2rem;text-align:center">
+    Bracelets ship from Rochester, NY · Free shipping on orders over $75 · 30-day returns
+  </p>
+</section>
+
+<!-- GALLERY -->
+<section class="gallery-section" id="gallery">
+  <div class="section-eyebrow" style="color:var(--gold)">The Bracelet</div>
+  <h2 class="section-title" style="color:var(--gold-light)">Designed to be<br><em>seen and felt.</em></h2>
+
+  <div class="gallery-grid">
+    <div class="gallery-item">
+      <!-- Replace with: <img src="images/bracelet-main.jpg" alt="Luminary Jewels bracelet glowing purple"> -->
+      <div class="gallery-placeholder">
+        <div class="big-glow"></div>
+        <span>Main product<br>photo here</span>
+      </div>
+      <span class="upload-hint">Replace with bracelet photo</span>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-placeholder">
+        <div class="big-glow"></div>
+        <span>Resin face<br>close-up</span>
+      </div>
+      <span class="upload-hint">Replace with resin photo</span>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-placeholder">
+        <div class="big-glow"></div>
+        <span>On wrist<br>lifestyle</span>
+      </div>
+      <span class="upload-hint">Replace with lifestyle photo</span>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-placeholder">
+        <div class="big-glow"></div>
+        <span>LED glow<br>detail shot</span>
+      </div>
+      <span class="upload-hint">Replace with LED glow photo</span>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-placeholder">
+        <div class="big-glow"></div>
+        <span>Band swap<br>detail</span>
+      </div>
+      <span class="upload-hint">Replace with band photo</span>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-eyebrow">What Makes It Different</div>
+  <h2 class="section-title">Built for people who want<br><em>beauty and function</em></h2>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-number">01</div>
+      <div class="feature-icon"></div>
+      <h3 class="feature-title">Color-Coded Glow</h3>
+      <p class="feature-desc">Each reminder gets its own color. Purple for medication. Blue for meetings. Green for movement. You learn the language of light — your phone stays in your pocket.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-number">02</div>
+      <div class="feature-icon"></div>
+      <h3 class="feature-title">Interchangeable Resin Faces</h3>
+      <p class="feature-desc">Every resin face is hand-poured and one of a kind. Swap your face in seconds to match your outfit, mood, or occasion. Collect them. Gift them. Make them yours.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-number">03</div>
+      <div class="feature-icon"></div>
+      <h3 class="feature-title">No App Required</h3>
+      <p class="feature-desc">Plug in the magnetic cable, open Chrome, and set your reminders in seconds. No app to download. No account to create. Unplug and wear.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-number">04</div>
+      <div class="feature-icon"></div>
+      <h3 class="feature-title">Gentle Vibration</h3>
+      <p class="feature-desc">A soft pulse on your wrist — never disruptive, never ignored. The bracelet remembers your schedule even when your phone is off. Double-tap the face to dismiss.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-number">05</div>
+      <div class="feature-icon"></div>
+      <h3 class="feature-title">Looks Like Jewelry</h3>
+      <p class="feature-desc">No screen. No digital display. No fitness tracker aesthetic. Luminary Jewels is designed to be worn to dinner, to meetings, and to bed — because beautiful things should work hard.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-number">06</div>
+      <div class="feature-icon"></div>
+      <h3 class="feature-title">For Every Generation</h3>
+      <p class="feature-desc">For women building routines. For teens learning independence. For mothers who want their kids off their phones. One bracelet, endless uses.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works" class="how-it-works">
+  <div class="section-eyebrow">Simple by Design</div>
+  <h2 class="section-title">Set it once.<br><em>Wear it always.</em></h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-number">01</div>
+      <h3 class="step-title">Snap the Cable</h3>
+      <p class="step-desc">The magnetic pogo cable attaches to the underside of your bracelet. No ports. No fumbling.</p>
+    </div>
+    <div class="step">
+      <div class="step-number">02</div>
+      <h3 class="step-title">Open Chrome</h3>
+      <p class="step-desc">Go to shopluminaryjewels.com/setup in Chrome or Edge. Click Connect. That's it.</p>
+    </div>
+    <div class="step">
+      <div class="step-number">03</div>
+      <h3 class="step-title">Set Reminders</h3>
+      <p class="step-desc">Pick your times and colors. Save to bracelet. The schedule lives inside the bracelet — no phone needed.</p>
+    </div>
+    <div class="step">
+      <div class="step-number">04</div>
+      <h3 class="step-title">Wear &amp; Glow</h3>
+      <p class="step-desc">Unplug the cable and go. At reminder time your bracelet glows and vibrates. Double-tap to dismiss.</p>
+    </div>
+  </div>
+</section>
+
+<!-- RESIN FACES -->
+<section>
+  <div class="resin-section">
+    <div>
+      <div class="section-eyebrow">Interchangeable Collection</div>
+      <h2 class="section-title">Change your face.<br><em>Keep your reminder.</em></h2>
+      <p style="font-size:0.78rem;letter-spacing:0.06em;line-height:2;color:var(--text-mid);margin-bottom:2rem">
+        Every Luminary Jewels bracelet comes with one hand-poured resin face. Each one is unique — no two are exactly alike. Buy additional faces individually and swap them in seconds with our magnetic system.
+      </p>
+      <p style="font-size:0.78rem;letter-spacing:0.06em;line-height:2;color:var(--text-mid);margin-bottom:2.5rem">
+        Deep purples. Ocean blues. Rose golds. Botanical greens. The LED glows through the resin creating a luminous effect that changes with every piece.
+      </p>
+      <a href="#shop" class="btn-primary">Shop Resin Faces</a>
+    </div>
+    <div class="resin-faces">
+      <div class="resin-face rf-1"><div class="resin-glow"></div></div>
+      <div class="resin-face rf-2"><div class="resin-glow"></div></div>
+      <div class="resin-face rf-3"><div class="resin-glow"></div></div>
+      <div class="resin-face rf-4"><div class="resin-glow"></div></div>
+      <div class="resin-face rf-5"><div class="resin-glow"></div></div>
+      <div class="resin-face rf-6"><div class="resin-glow"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- EMAIL SIGNUP -->
+<section class="signup" id="notify">
+  <div class="section-eyebrow" style="justify-content:center">Be First</div>
+  <h2 class="section-title" style="text-align:center">Join the founding list.<br><em>Get $10 off your first bracelet.</em></h2>
+  <p class="signup-desc">We're launching our founding collection of 30 bracelets. Join the list and be first to know — plus receive a founding discount when we go live.</p>
+  <form class="signup-form" onsubmit="handleSignup(event)">
+    <input type="email" placeholder="your@email.com" required id="email-input">
+    <button type="submit">Notify Me</button>
+  </form>
+  <p id="signup-confirm" style="color:rgba(201,168,76,0.8);font-size:0.7rem;letter-spacing:0.1em;margin-top:1rem;min-height:1.2em;text-align:center"></p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Luminary Jewels</div>
+  <ul class="footer-links">
+    <li><a href="#shop">Shop</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="setup.html">Set Up Bracelet</a></li>
+    <li><a href="https://facebook.com/luminaryjewels27" target="_blank">Facebook</a></li>
+    <li><a href="mailto:luminaryjewels27@gmail.com">Contact</a></li>
+  </ul>
+  <p class="footer-copy">© 2026 Luminary Jewels · Rochester, NY</p>
+</footer>
+
+<script>
+function handleSignup(e) {
+  e.preventDefault();
+  document.getElementById('signup-confirm').textContent = '✓ You\'re on the list — we\'ll be in touch soon.';
+  document.getElementById('email-input').value = '';
+}
+
+function notifyMe(product) {
+  const email = prompt(`Enter your email to be notified when the ${product} is available:`);
+  if (email && email.includes('@')) {
+    alert(`✓ We'll notify you at ${email} when the ${product} is ready!`);
+  }
+}
+</script>
+
+</body>
+</html>
