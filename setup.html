@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Set Up Your Bracelet — Luminary Jewels</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">Luminary <span>Jewels</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html#features">Features</a></li>
+    <li><a href="index.html#how-it-works">How It Works</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="setup.html">Set Up Your Bracelet</a></li>
+  </ul>
+  <a href="index.html#notify" class="nav-cta">Notify Me</a>
+</nav>
+
+<div class="setup-page">
+  <div class="setup-card">
+    <h1 class="setup-title">Set Up Your Bracelet</h1>
+    <p class="setup-sub">Web Serial · Chrome or Edge only</p>
+
+    <button class="connect-btn" id="connect-btn" onclick="connectBracelet()">
+      Connect Bracelet
+    </button>
+
+    <div class="status-bar" id="status">
+      Snap the magnetic cable to your bracelet, then click Connect.
+    </div>
+
+    <div class="reminders-section" id="reminders-section">
+
+      <div id="reminder-rows"></div>
+
+      <button class="save-btn" onclick="saveReminders()">
+        Save to Bracelet
+      </button>
+
+      <div id="save-status" class="status-bar" style="margin-top:1rem"></div>
+    </div>
+
+    <p class="browser-note">
+      Requires Chrome or Edge browser with Web Serial support.<br>
+      Firefox and Safari are not supported.<br>
+      Your reminder data stays on your bracelet — nothing is stored online.
+    </p>
+  </div>
+</div>
+
+<script>
+const COLORS = [
+  { name: 'purple', label: 'Purple', r: 123, g: 0,   b: 255 },
+  { name: 'blue',   label: 'Blue',   r: 0,   g: 100, b: 255 },
+  { name: 'green',  label: 'Green',  r: 0,   g: 200, b: 50  },
+  { name: 'red',    label: 'Red',    r: 255, g: 0,   b: 0   },
+  { name: 'gold',   label: 'Gold',   r: 255, g: 180, b: 0   },
+];
+
+const NUM_REMINDERS = 5;
+let port = null;
+let writer = null;
+let selectedColors = Array(NUM_REMINDERS).fill('purple');
+
+// Build reminder rows
+function buildRows() {
+  const container = document.getElementById('reminder-rows');
+  container.innerHTML = '';
+  for (let i = 0; i < NUM_REMINDERS; i++) {
+    const row = document.createElement('div');
+    row.className = 'reminder-row';
+    row.innerHTML = `
+      <span class="reminder-label">Reminder ${i + 1}</span>
+      <input type="time" class="reminder-time" id="time-${i}" value="">
+      <div class="color-dots">
+        ${COLORS.map(c => `
+          <div class="color-dot ${c.name} ${c.name === selectedColors[i] ? 'selected' : ''}"
+               title="${c.label}"
+               onclick="selectColor(${i}, '${c.name}')"></div>
+        `).join('')}
+      </div>
+    `;
+    container.appendChild(row);
+  }
+}
+
+function selectColor(rowIndex, colorName) {
+  selectedColors[rowIndex] = colorName;
+  buildRows();
+}
+
+async function connectBracelet() {
+  if (!('serial' in navigator)) {
+    setStatus('Web Serial is not supported. Please use Chrome or Edge.', 'error');
+    return;
+  }
+
+  try {
+    setStatus('Requesting port access...', '');
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 115200 });
+    writer = port.writable.getWriter();
+
+    setStatus('✓ Bracelet connected! Set your reminders below.', 'connected');
+    document.getElementById('connect-btn').textContent = 'Connected ✓';
+    document.getElementById('connect-btn').disabled = true;
+    document.getElementById('reminders-section').classList.add('visible');
+    buildRows();
+
+  } catch (err) {
+    if (err.name !== 'NotFoundError') {
+      setStatus('Could not connect. Make sure cable is attached and try again.', 'error');
+    } else {
+      setStatus('No port selected. Snap the cable in and try again.', '');
+    }
+  }
+}
+
+async function saveReminders() {
+  if (!writer) {
+    setStatus('Please connect your bracelet first.', 'error');
+    return;
+  }
+
+  const reminders = [];
+  for (let i = 0; i < NUM_REMINDERS; i++) {
+    const timeInput = document.getElementById(`time-${i}`);
+    const timeValue = timeInput.value;
+    if (timeValue) {
+      const [hours, minutes] = timeValue.split(':').map(Number);
+      const color = COLORS.find(c => c.name === selectedColors[i]);
+      reminders.push({ hours, minutes, r: color.r, g: color.g, b: color.b });
+    }
+  }
+
+  if (reminders.length === 0) {
+    document.getElementById('save-status').textContent = 'Please set at least one reminder time.';
+    document.getElementById('save-status').className = 'status-bar error';
+    return;
+  }
+
+  // Build JSON command to send to RP2040
+  const command = JSON.stringify({ cmd: 'SET_REMINDERS', reminders }) + '\n';
+  const encoder = new TextEncoder();
+
+  try {
+    await writer.write(encoder.encode(command));
+    document.getElementById('save-status').textContent = `✓ ${reminders.length} reminder${reminders.length > 1 ? 's' : ''} saved to bracelet!`;
+    document.getElementById('save-status').className = 'status-bar connected';
+  } catch (err) {
+    document.getElementById('save-status').textContent = 'Save failed. Check cable connection and try again.';
+    document.getElementById('save-status').className = 'status-bar error';
+  }
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status-bar' + (type ? ' ' + type : '');
+}
+</script>
+
+</body>
+</html>
