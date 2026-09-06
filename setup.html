@@ -1,25 +1,748 @@
-Luminary Jewels
-	•	Features
-	•	How It Works
-	•	About
-	•	Set Up Your Bracelet
-WEB SERIAL · CHROME OR EDGE
-Set Up Your Bracelet
-Plug your bracelet into your computer with a USB-C cable, then connect below. Your reminders are saved onto the bracelet itself — unplug and they travel with you.
-1. Connect
-Plug the USB-C cable into your bracelet and into your computer, then click Connect. Your browser will ask you to choose the device — pick the one that appears.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set Up Your Bracelet — Luminary Jewels</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #1a1129;
+    --bg-card:   #241733;
+    --bg-input:  #2e1f40;
+    --gold:      #d4af6a;
+    --gold-dim:  #8a7248;
+    --text:      #f2ecf7;
+    --muted:     #a596b8;
+    --line:      rgba(212,175,106,0.18);
+    --green:     #4ade80;
+    --red:       #f87171;
+  }
 
-Not connected
-Connect Bracelet
-Sync Clock
-2. Your Reminders
-Pick a time, a colour, and how you'd like it to feel. Tap the circle to change colour.
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-+ Add a reminder
-3. Save to Bracelet
-This replaces everything currently on the bracelet with the list above.
-Save to Bracelet
-Connection details
-Nothing yet.
-Requires Chrome or Edge with Web Serial support. Firefox and Safari are not supported. Your reminder data stays on your bracelet — nothing is stored online.
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
 
+  h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; font-weight: 600; }
+
+  /* ---------- nav ---------- */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 32px;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap; gap: 16px;
+  }
+  .brand {
+    font-family: 'Fraunces', serif; font-size: 20px;
+    color: var(--gold); text-decoration: none; letter-spacing: 0.02em;
+  }
+  .nav-links { display: flex; gap: 26px; list-style: none; flex-wrap: wrap; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none; font-size: 14px;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--gold); }
+
+  /* ---------- layout ---------- */
+  main { max-width: 760px; margin: 0 auto; padding: 56px 24px 100px; }
+
+  .eyebrow {
+    font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--gold-dim); margin-bottom: 14px;
+  }
+  h1 { font-size: clamp(32px, 5vw, 44px); margin-bottom: 12px; }
+  .lede { color: var(--muted); margin-bottom: 40px; max-width: 52ch; }
+
+  section {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 22px;
+  }
+  section h2 { font-size: 20px; margin-bottom: 6px; }
+  .section-note { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+
+  /* ---------- buttons ---------- */
+  button {
+    font-family: inherit; font-size: 15px; font-weight: 500;
+    border-radius: 9px; cursor: pointer; transition: all 0.18s;
+    border: 1px solid transparent; padding: 13px 24px;
+  }
+  .btn-primary { background: var(--gold); color: #1a1129; }
+  .btn-primary:hover:not(:disabled) { background: #e0bd78; }
+  .btn-outline {
+    background: transparent; color: var(--gold); border-color: var(--gold-dim);
+  }
+  .btn-outline:hover:not(:disabled) { border-color: var(--gold); background: rgba(212,175,106,0.07); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* ---------- status ---------- */
+  .status {
+    display: flex; align-items: center; gap: 11px;
+    padding: 14px 18px; border-radius: 9px;
+    background: var(--bg-input); font-size: 14px;
+    margin-bottom: 20px;
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .dot.on  { background: var(--green); box-shadow: 0 0 9px var(--green); }
+  .dot.err { background: var(--red); }
+
+  /* ---------- device info ---------- */
+  .device-info {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px; margin-top: 20px; padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  .info-item .label {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--gold-dim); margin-bottom: 3px;
+  }
+  .info-item .value { font-size: 15px; }
+
+  /* ---------- reminders ---------- */
+  .reminder {
+    background: var(--bg-input);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+  .reminder-top {
+    display: flex; align-items: center; gap: 13px; margin-bottom: 16px;
+  }
+  .swatch {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.16);
+    cursor: pointer; flex-shrink: 0; padding: 0;
+  }
+  .reminder-title { flex: 1; font-weight: 500; }
+  .remove {
+    background: none; border: none; color: var(--muted);
+    font-size: 20px; padding: 0 6px; line-height: 1;
+  }
+  .remove:hover { color: var(--red); }
+
+  .field-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 14px;
+  }
+  label {
+    display: block; font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--gold-dim); margin-bottom: 6px;
+  }
+  input[type="text"], input[type="time"], input[type="date"], select {
+    width: 100%; padding: 10px 12px;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--line); border-radius: 7px;
+    font-family: inherit; font-size: 14px;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--gold-dim); }
+
+  /* ---------- day picker ---------- */
+  .days { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+  .day {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--bg); border: 1px solid var(--line);
+    color: var(--muted); font-size: 12px; padding: 0;
+  }
+  .day.on { background: var(--gold); color: #1a1129; border-color: var(--gold); }
+
+  /* ---------- colour picker ---------- */
+  .palette {
+    display: none; gap: 8px; flex-wrap: wrap;
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);
+  }
+  .palette.open { display: flex; }
+  .palette button {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 2px solid transparent; padding: 0;
+  }
+  .palette button.sel { border-color: var(--text); }
+
+  /* ---------- toast ---------- */
+  #toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(120%);
+    background: var(--bg-card); border: 1px solid var(--gold-dim);
+    color: var(--text); padding: 14px 26px; border-radius: 9px;
+    font-size: 14px; transition: transform 0.3s; z-index: 50;
+    max-width: 90vw; text-align: center;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ---------- footnote ---------- */
+  .footnote {
+    color: var(--muted); font-size: 13px; line-height: 1.9;
+    text-align: center; margin-top: 36px;
+  }
+
+  /* ---------- unsupported browser ---------- */
+  #unsupported {
+    display: none;
+    background: rgba(248,113,113,0.09);
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 11px; padding: 20px; margin-bottom: 24px;
+    font-size: 14px;
+  }
+  #unsupported strong { color: var(--red); }
+
+  /* ---------- log ---------- */
+  details { margin-top: 22px; }
+  summary {
+    cursor: pointer; color: var(--muted); font-size: 13px;
+    list-style: none; user-select: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: '▸ '; }
+  details[open] summary::before { content: '▾ '; }
+  #log {
+    margin-top: 12px; padding: 14px;
+    background: #140e1f; border-radius: 7px;
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+    color: var(--muted); white-space: pre-wrap;
+    max-height: 220px; overflow-y: auto;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand">Luminary Jewels</a>
+  <ul class="nav-links">
+    <li><a href="index.html#features">Features</a></li>
+    <li><a href="index.html#how-it-works">How It Works</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="setup.html">Set Up Your Bracelet</a></li>
+  </ul>
+</nav>
+
+<main>
+  <div class="eyebrow">Web Serial · Chrome or Edge</div>
+  <h1>Set Up Your Bracelet</h1>
+  <p class="lede">
+    Plug your bracelet into your computer with a USB-C cable, then connect below.
+    Your reminders are saved onto the bracelet itself — unplug and they travel with you.
+  </p>
+
+  <div id="unsupported">
+    <strong>This browser can't connect to your bracelet.</strong><br>
+    Web Serial only works in Chrome, Edge, or Opera on a desktop computer or Android
+    phone. Safari and Firefox don't support it, and it doesn't work on iPhone or iPad.
+    If you're on a Mac, open this page in Chrome.
+  </div>
+
+  <!-- ============ CONNECT ============ -->
+  <section>
+    <h2>1. Connect</h2>
+    <p class="section-note">
+      Plug the USB-C cable into your bracelet and into your computer, then click Connect.
+      Your browser will ask you to choose the device — pick the one that appears.
+    </p>
+
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span id="statusText">Not connected</span>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" id="connectBtn">Connect Bracelet</button>
+      <button class="btn-outline" id="syncBtn" disabled>Sync Clock</button>
+    </div>
+
+    <div class="device-info" id="deviceInfo" style="display:none">
+      <div class="info-item">
+        <div class="label">Battery</div>
+        <div class="value" id="infoBattery">—</div>
+      </div>
+      <div class="info-item">
+        <div class="label">Charging</div>
+        <div class="value" id="infoCharge">—</div>
+      </div>
+      <div class="info-item">
+        <div class="label">Clock</div>
+        <div class="value" id="infoClock">—</div>
+      </div>
+      <div class="info-item">
+        <div class="label">Reminders stored</div>
+        <div class="value" id="infoCount">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ REMINDERS ============ -->
+  <section>
+    <h2>2. Your Reminders</h2>
+    <p class="section-note">
+      Pick a time, a colour, and how you'd like it to feel. Tap the circle to change colour.
+    </p>
+
+    <div id="reminderList"></div>
+
+    <button class="btn-outline" id="addBtn" style="margin-top:8px">+ Add a reminder</button>
+  </section>
+
+  <!-- ============ SAVE ============ -->
+  <section>
+    <h2>3. Save to Bracelet</h2>
+    <p class="section-note">
+      This replaces everything currently on the bracelet with the list above.
+    </p>
+    <button class="btn-primary" id="saveBtn" disabled>Save to Bracelet</button>
+
+    <details>
+      <summary>Connection details</summary>
+      <div id="log">Nothing yet.</div>
+    </details>
+  </section>
+
+  <p class="footnote">
+    Requires Chrome or Edge with Web Serial support.<br>
+    Firefox and Safari are not supported.<br>
+    Your reminder data stays on your bracelet — nothing is stored online.
+  </p>
+</main>
+
+<div id="toast"></div>
+
+<script>
+/* ==================================================================
+   Luminary Jewels — bracelet setup
+
+   Talks to the bracelet firmware over USB using the Web Serial API.
+   The command format matches serial_protocol.cpp in the firmware:
+
+     PING                     -> OK LUMINARY_JEWELS v1
+     STATUS                   -> battery, charge state, clock, count
+     TIME y m d dow h mi s    -> set the clock
+     CLEAR                    -> wipe stored reminders
+     ADD ...12 numbers...     -> add one reminder
+     SAVE                     -> commit to flash
+   ================================================================== */
+
+const BAUD = 115200;
+
+// Colours offered to the customer. RGB values are sent to the bracelet.
+const COLOURS = [
+  { name: 'Purple', hex: '#a855f7', rgb: [168,  85, 247] },
+  { name: 'Blue',   hex: '#4a90ff', rgb: [ 74, 144, 255] },
+  { name: 'Teal',   hex: '#2dd4bf', rgb: [ 45, 212, 191] },
+  { name: 'Green',  hex: '#34d399', rgb: [ 52, 211, 153] },
+  { name: 'Gold',   hex: '#d4af6a', rgb: [212, 175, 106] },
+  { name: 'Orange', hex: '#fb923c', rgb: [251, 146,  60] },
+  { name: 'Rose',   hex: '#f472b6', rgb: [244, 114, 182] },
+  { name: 'Red',    hex: '#f87171', rgb: [248, 113, 113] },
+  { name: 'White',  hex: '#e2e8f0', rgb: [226, 232, 240] },
+];
+
+// Repeat types — these numbers must match RepeatType in the firmware.
+const REPEAT_ONCE = 0, REPEAT_DAILY = 1, REPEAT_WEEKLY = 2, REPEAT_EVERY_N = 3;
+
+// Day bit values — Sunday is bit 0, matching the RTC.
+const DAY_NAMES = ['S','M','T','W','T','F','S'];
+const DAY_FULL  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+let port = null, reader = null, writer = null;
+let reminders = [];
+let nextId = 1;
+
+/* ---------------- small helpers ---------------- */
+
+const $ = id => document.getElementById(id);
+
+function log(line) {
+  const el = $('log');
+  if (el.textContent === 'Nothing yet.') el.textContent = '';
+  el.textContent += line + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function toast(message) {
+  const el = $('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+function setStatus(text, state) {
+  $('statusText').textContent = text;
+  const dot = $('dot');
+  dot.className = 'dot' + (state ? ' ' + state : '');
+}
+
+function setConnected(yes) {
+  $('connectBtn').textContent = yes ? 'Disconnect' : 'Connect Bracelet';
+  $('syncBtn').disabled = !yes;
+  $('saveBtn').disabled = !yes;
+  $('deviceInfo').style.display = yes ? 'grid' : 'none';
+}
+
+/* ---------------- serial ---------------- */
+
+async function sendCommand(command, waitMs = 600) {
+  if (!writer) throw new Error('not connected');
+
+  log('> ' + command);
+  await writer.write(new TextEncoder().encode(command + '\n'));
+
+  // Collect whatever comes back within the window.
+  let response = '';
+  const deadline = Date.now() + waitMs;
+
+  while (Date.now() < deadline) {
+    const remaining = deadline - Date.now();
+    const result = await Promise.race([
+      reader.read(),
+      new Promise(resolve => setTimeout(() => resolve({ timeout: true }), remaining))
+    ]);
+
+    if (result.timeout) break;
+    if (result.done) break;
+    if (result.value) response += new TextDecoder().decode(result.value);
+    if (response.includes('\n') && waitMs <= 600) break;
+  }
+
+  const clean = response.trim();
+  if (clean) clean.split('\n').forEach(l => log('< ' + l.trim()));
+  return clean;
+}
+
+async function connect() {
+  if (port) { await disconnect(); return; }
+
+  try {
+    setStatus('Waiting for you to choose the bracelet…');
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: BAUD });
+
+    writer = port.writable.getWriter();
+    reader = port.readable.getReader();
+
+    setStatus('Checking the bracelet…');
+    const reply = await sendCommand('PING');
+
+    if (!reply.includes('LUMINARY_JEWELS')) {
+      setStatus('That device didn\'t answer as a bracelet.', 'err');
+      toast('That doesn\'t look like a Luminary Jewels bracelet.');
+      await disconnect();
+      return;
+    }
+
+    setStatus('Bracelet connected', 'on');
+    setConnected(true);
+    toast('Connected');
+    await refreshStatus();
+
+  } catch (err) {
+    if (err.name === 'NotFoundError') {
+      setStatus('Not connected');   // customer closed the picker — not an error
+    } else {
+      setStatus('Couldn\'t connect: ' + err.message, 'err');
+      log('! ' + err.message);
+    }
+    port = null;
+  }
+}
+
+async function disconnect() {
+  try {
+    if (reader) { await reader.cancel(); reader.releaseLock(); }
+    if (writer) { writer.releaseLock(); }
+    if (port)   { await port.close(); }
+  } catch (e) { /* already gone */ }
+
+  port = reader = writer = null;
+  setConnected(false);
+  setStatus('Not connected');
+}
+
+/* ---------------- device status ---------------- */
+
+async function refreshStatus() {
+  const reply = await sendCommand('STATUS');
+  if (!reply.startsWith('OK')) return;
+
+  // OK battery 3.92 charge none clock valid 2026-7-8 14:30 reminders 3
+  const battery = reply.match(/battery ([\d.]+)/);
+  const charge  = reply.match(/charge (\w+)/);
+  const count   = reply.match(/reminders (\d+)/);
+  const invalid = reply.includes('clock invalid');
+
+  if (battery) {
+    const volts = parseFloat(battery[1]);
+    // Rough percentage across the usable range of a LiPo cell.
+    const pct = Math.max(0, Math.min(100,
+      Math.round(((volts - 3.3) / (4.2 - 3.3)) * 100)));
+    $('infoBattery').textContent = pct + '%';
+  }
+
+  if (charge) {
+    $('infoCharge').textContent =
+      charge[1] === 'charging' ? 'Charging' :
+      charge[1] === 'full'     ? 'Fully charged' : 'On battery';
+  }
+
+  $('infoClock').textContent = invalid ? 'Needs syncing' : 'Set';
+  if (count) $('infoCount').textContent = count[1];
+
+  if (invalid) {
+    toast('Your bracelet has lost the time — tap Sync Clock.');
+  }
+}
+
+async function syncClock() {
+  const now = new Date();
+  const command = ['TIME',
+    now.getFullYear(), now.getMonth() + 1, now.getDate(),
+    now.getDay(), now.getHours(), now.getMinutes(), now.getSeconds()
+  ].join(' ');
+
+  const reply = await sendCommand(command);
+  if (reply.includes('OK')) {
+    toast('Clock synced');
+    await refreshStatus();
+  } else {
+    toast('Couldn\'t set the clock');
+  }
+}
+
+/* ---------------- reminders ---------------- */
+
+function blankReminder() {
+  return {
+    id: nextId++,
+    label: '',
+    time: '08:00',
+    colour: 0,
+    vibration: 0,          // 0 solid, 1 pulse
+    repeat: REPEAT_DAILY,
+    days: 0,
+    interval: 2,
+    start: new Date().toISOString().slice(0, 10)
+  };
+}
+
+function render() {
+  const list = $('reminderList');
+  list.innerHTML = '';
+
+  if (reminders.length === 0) {
+    list.innerHTML =
+      '<p style="color:var(--muted);font-size:14px;padding:8px 0">' +
+      'No reminders yet. Add your first one below.</p>';
+    return;
+  }
+
+  reminders.forEach(r => {
+    const colour = COLOURS[r.colour];
+
+    const box = document.createElement('div');
+    box.className = 'reminder';
+    box.innerHTML = `
+      <div class="reminder-top">
+        <button class="swatch" data-act="palette" data-id="${r.id}"
+                style="background:${colour.hex}" title="Change colour"></button>
+        <input type="text" class="reminder-title" data-act="label" data-id="${r.id}"
+               placeholder="What's this for?" value="${r.label.replace(/"/g,'&quot;')}"
+               style="border:none;background:none;padding:0;font-size:15px">
+        <button class="remove" data-act="remove" data-id="${r.id}"
+                title="Remove">&times;</button>
+      </div>
+
+      <div class="palette" data-palette="${r.id}">
+        ${COLOURS.map((c, i) => `
+          <button data-act="colour" data-id="${r.id}" data-colour="${i}"
+                  class="${i === r.colour ? 'sel' : ''}"
+                  style="background:${c.hex}" title="${c.name}"></button>`).join('')}
+      </div>
+
+      <div class="field-grid">
+        <div>
+          <label>Time</label>
+          <input type="time" data-act="time" data-id="${r.id}" value="${r.time}">
+        </div>
+        <div>
+          <label>Feels like</label>
+          <select data-act="vibration" data-id="${r.id}">
+            <option value="0" ${r.vibration === 0 ? 'selected' : ''}>One long buzz</option>
+            <option value="1" ${r.vibration === 1 ? 'selected' : ''}>Gentle pulses</option>
+          </select>
+        </div>
+        <div>
+          <label>Repeats</label>
+          <select data-act="repeat" data-id="${r.id}">
+            <option value="${REPEAT_DAILY}"   ${r.repeat === REPEAT_DAILY   ? 'selected' : ''}>Every day</option>
+            <option value="${REPEAT_WEEKLY}"  ${r.repeat === REPEAT_WEEKLY  ? 'selected' : ''}>Certain days</option>
+            <option value="${REPEAT_EVERY_N}" ${r.repeat === REPEAT_EVERY_N ? 'selected' : ''}>Every few weeks</option>
+            <option value="${REPEAT_ONCE}"    ${r.repeat === REPEAT_ONCE    ? 'selected' : ''}>Just once</option>
+          </select>
+        </div>
+        ${r.repeat === REPEAT_EVERY_N ? `
+        <div>
+          <label>How often</label>
+          <select data-act="interval" data-id="${r.id}">
+            <option value="2" ${r.interval === 2 ? 'selected' : ''}>Every 2 weeks</option>
+            <option value="3" ${r.interval === 3 ? 'selected' : ''}>Every 3 weeks</option>
+            <option value="4" ${r.interval === 4 ? 'selected' : ''}>Every 4 weeks</option>
+          </select>
+        </div>` : ''}
+        ${(r.repeat === REPEAT_ONCE || r.repeat === REPEAT_EVERY_N) ? `
+        <div>
+          <label>${r.repeat === REPEAT_ONCE ? 'On this date' : 'Starting from'}</label>
+          <input type="date" data-act="start" data-id="${r.id}" value="${r.start}">
+        </div>` : ''}
+      </div>
+
+      ${(r.repeat === REPEAT_WEEKLY || r.repeat === REPEAT_EVERY_N) ? `
+      <div class="days">
+        ${DAY_NAMES.map((d, i) => `
+          <button class="day ${(r.days >> i) & 1 ? 'on' : ''}"
+                  data-act="day" data-id="${r.id}" data-day="${i}"
+                  title="${DAY_FULL[i]}">${d}</button>`).join('')}
+      </div>` : ''}
+    `;
+    list.appendChild(box);
+  });
+}
+
+function findReminder(id) {
+  return reminders.find(r => r.id === Number(id));
+}
+
+// One listener for the whole list, rather than one per control.
+$('reminderList').addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn || btn.tagName === 'INPUT' || btn.tagName === 'SELECT') return;
+
+  const r = findReminder(btn.dataset.id);
+  if (!r) return;
+
+  switch (btn.dataset.act) {
+    case 'palette': {
+      const p = document.querySelector(`[data-palette="${r.id}"]`);
+      p.classList.toggle('open');
+      break;
+    }
+    case 'colour':
+      r.colour = Number(btn.dataset.colour);
+      render();
+      break;
+    case 'day':
+      r.days ^= (1 << Number(btn.dataset.day));
+      render();
+      break;
+    case 'remove':
+      reminders = reminders.filter(x => x.id !== r.id);
+      render();
+      break;
+  }
+});
+
+$('reminderList').addEventListener('input', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const r = findReminder(el.dataset.id);
+  if (!r) return;
+
+  switch (el.dataset.act) {
+    case 'label':     r.label = el.value; break;
+    case 'time':      r.time = el.value; break;
+    case 'start':     r.start = el.value; break;
+    case 'vibration': r.vibration = Number(el.value); break;
+    case 'interval':  r.interval = Number(el.value); break;
+    case 'repeat':
+      r.repeat = Number(el.value);
+      render();          // different fields appear for different repeat types
+      break;
+  }
+});
+
+/* ---------------- saving ---------------- */
+
+function validate() {
+  for (const r of reminders) {
+    if ((r.repeat === REPEAT_WEEKLY || r.repeat === REPEAT_EVERY_N) && r.days === 0) {
+      return 'Pick at least one day for "' + (r.label || 'your reminder') + '".';
+    }
+  }
+  return null;
+}
+
+async function saveAll() {
+  const problem = validate();
+  if (problem) { toast(problem); return; }
+
+  $('saveBtn').disabled = true;
+  $('saveBtn').textContent = 'Saving…';
+
+  try {
+    await sendCommand('CLEAR');
+
+    for (const r of reminders) {
+      const [hour, minute] = r.time.split(':').map(Number);
+      const [red, green, blue] = COLOURS[r.colour].rgb;
+      const [year, month, day] = r.start.split('-').map(Number);
+
+      // Daily needs no day flags; the firmware ignores them.
+      const days = (r.repeat === REPEAT_DAILY || r.repeat === REPEAT_ONCE) ? 0 : r.days;
+
+      const command = ['ADD',
+        hour, minute, red, green, blue, r.vibration,
+        r.repeat, days, r.interval,
+        year, month, day
+      ].join(' ');
+
+      const reply = await sendCommand(command, 400);
+      if (!reply.includes('OK')) throw new Error(reply || 'no reply from bracelet');
+    }
+
+    const saved = await sendCommand('SAVE', 2500);   // flash writes take longer
+    if (!saved.includes('OK')) throw new Error(saved || 'the bracelet didn\'t confirm');
+
+    toast('Saved to your bracelet');
+    await refreshStatus();
+
+  } catch (err) {
+    toast('Something went wrong: ' + err.message);
+    log('! ' + err.message);
+  } finally {
+    $('saveBtn').disabled = false;
+    $('saveBtn').textContent = 'Save to Bracelet';
+  }
+}
+
+/* ---------------- start up ---------------- */
+
+$('connectBtn').addEventListener('click', connect);
+$('syncBtn').addEventListener('click', syncClock);
+$('saveBtn').addEventListener('click', saveAll);
+$('addBtn').addEventListener('click', () => {
+  reminders.push(blankReminder());
+  render();
+});
+
+if (!('serial' in navigator)) {
+  $('unsupported').style.display = 'block';
+  $('connectBtn').disabled = true;
+  setStatus('This browser can\'t connect', 'err');
+}
+
+// Start with one example so the page never looks empty.
+reminders.push({
+  id: nextId++, label: 'Morning medication', time: '08:00',
+  colour: 0, vibration: 0, repeat: REPEAT_DAILY, days: 0, interval: 2,
+  start: new Date().toISOString().slice(0, 10)
+});
+render();
+</script>
+
+</body>
+</html>
