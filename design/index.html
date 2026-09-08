@@ -1,1 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Your Resin Face — Luminary Jewels</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap');
 
+  :root{
+    --ink:#170F24; --panel:#231732; --panel-2:#2C1C3F; --line: rgba(243,234,224,0.14);
+    --cream:#F3EAE0; --cream-dim: rgba(243,234,224,0.62); --gold:#D9A15B;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--ink); color:var(--cream); font-family:'Manrope', sans-serif; }
+  .resin-builder{ max-width:1220px; margin:0 auto; padding:64px 24px 96px; }
+  .rb-head{ max-width:640px; margin-bottom:32px; }
+  .rb-head h2{ font-family:'Fraunces', serif; font-weight:500; font-size:clamp(30px, 4.2vw, 42px); line-height:1.1; margin:0 0 12px; }
+  .rb-head p{ color:var(--cream-dim); font-size:15.5px; line-height:1.6; margin:0; }
+  .rb-price-note{ margin-top:10px !important; font-size:13.5px !important; color:var(--gold) !important; font-weight:600; }
+
+  .rb-themes{ display:flex; flex-wrap:wrap; gap:9px; margin-bottom:40px; }
+  .rb-theme-btn{ background:var(--panel); border:1px solid var(--line); color:var(--cream); padding:8px 15px; border-radius:20px; font-size:12.5px; font-weight:600; cursor:pointer; transition: border-color .15s ease, background .15s ease; }
+  .rb-theme-btn:hover{ border-color:var(--gold); background:var(--panel-2); }
+
+  .rb-grid{ display:grid; grid-template-columns: 1.05fr 0.95fr; gap:44px; align-items:start; }
+
+  .rb-preview-wrap{ position:sticky; top:20px; order:2; }
+  .rb-preview-card{ background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:28px 24px 24px; }
+  .rb-oval-stage{ display:flex; justify-content:center; padding:6px 0 20px; }
+
+  .rb-oval{
+    position:relative; width:320px; height:212px; border-radius:50%; overflow:hidden;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.45), inset 0 0 0 3px rgba(201,154,92,0.9), inset 0 0 24px rgba(0,0,0,0.5);
+  }
+  .rb-oval > .layer-glow, .rb-oval > .rb-scatter, .rb-oval > .rb-photo-insert{ position:absolute; inset:0; }
+  .layer-glow{ background: radial-gradient(ellipse at 50% 42%, #ffffff 0%, var(--glow-color, #F2A649) 42%, #0d0716 100%); transition: background .2s ease; }
+  .layer-tile{ position:absolute; inset:0; background-repeat:repeat; background-size:120px 120px; }
+  .rb-scatter{ pointer-events:none; }
+  .rb-scatter img{ position:absolute; transform-origin:center; }
+
+  .rb-photo-insert{
+    width:38%; height:38%; left:50%; top:48%; transform:translate(-50%,-50%);
+    border-radius:50%; overflow:hidden; border:3px solid rgba(255,255,255,0.85);
+    box-shadow:0 4px 14px rgba(0,0,0,0.5); display:none; background:#3a2c4d;
+  }
+  .rb-photo-insert.is-active{ display:block; }
+  .rb-photo-insert img{ width:100%; height:100%; object-fit:cover; }
+
+  .rb-recipe{ border-top:1px solid var(--line); padding-top:16px; margin-top:2px; max-height:260px; overflow-y:auto; }
+  .rb-recipe-row{ display:flex; justify-content:space-between; gap:16px; font-size:13px; padding:4px 0; color:var(--cream-dim); }
+  .rb-recipe-row span:last-child{ color:var(--cream); text-align:right; }
+  .rb-recipe-row.rb-total{ border-top:1px solid var(--line); margin-top:8px; padding-top:14px; font-size:16px; }
+  .rb-recipe-row.rb-total span{ color:var(--cream); font-weight:700; }
+
+  .rb-save-btn{ width:100%; margin-top:16px; padding:14px 18px; background:var(--gold); color:#20130A; border:none; border-radius:3px; font-weight:700; font-size:14.5px; cursor:pointer; transition: transform .15s ease, background .15s ease; }
+  .rb-save-btn:hover{ background:#E4B370; }
+  .rb-save-btn:active{ transform: scale(0.98); }
+  .rb-save-note{ text-align:center; font-size:12px; color:var(--cream-dim); margin-top:9px; min-height:15px; }
+
+  .rb-options{ order:1; }
+  .rb-group{ margin-bottom:30px; }
+  .rb-group-title{ font-size:13px; font-weight:700; margin-bottom:3px; display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+  .rb-group-title small{ font-weight:600; color:var(--gold); font-size:11px; white-space:nowrap; }
+  .rb-group-sub{ font-size:12px; color:var(--cream-dim); margin-bottom:12px; }
+
+  .rb-swatch-row{ display:flex; flex-wrap:wrap; gap:10px; }
+  .rb-swatch{ display:flex; flex-direction:column; align-items:center; gap:5px; background:none; border:none; cursor:pointer; padding:0; width:72px; }
+  .rb-swatch-chip{
+    width:64px; height:64px; border-radius:7px; border:2px solid transparent; position:relative;
+    background-size:cover; background-position:center; transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+  }
+  .rb-swatch-chip.round{ border-radius:50%; }
+  .rb-swatch:hover .rb-swatch-chip{ transform: translateY(-2px); }
+  .rb-swatch.active .rb-swatch-chip{ border-color:var(--gold); box-shadow:0 0 0 3px rgba(217,161,91,0.25); }
+  .rb-swatch-label{ font-size:10px; color:var(--cream-dim); text-align:center; line-height:1.2; }
+  .rb-swatch-price{ font-size:9.5px; color:var(--gold); }
+  .rb-swatch.active .rb-swatch-label{ color:var(--cream); }
+
+  .rb-addin-check{
+    position:absolute; top:-6px; right:-6px; width:19px; height:19px; border-radius:50%;
+    background:var(--gold); color:#20130A; font-size:11px; display:none; align-items:center; justify-content:center; font-weight:700;
+    box-shadow:0 1px 4px rgba(0,0,0,0.4);
+  }
+  .rb-swatch.active .rb-addin-check{ display:flex; }
+
+  .rb-upload-row{ display:flex; align-items:center; gap:12px; }
+  .rb-upload-btn{ background:var(--panel); border:1px solid var(--line); color:var(--cream); padding:9px 14px; border-radius:3px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .rb-upload-btn:hover{ border-color:var(--gold); }
+  .rb-upload-status{ font-size:12px; color:var(--cream-dim); }
+
+  @media (max-width: 860px){
+    .rb-grid{ grid-template-columns:1fr; }
+    .rb-preview-wrap{ position:static; order:1; margin-bottom:32px; }
+    .rb-options{ order:2; }
+  }
+</style>
+</head>
+<body>
+
+<section class="resin-builder">
+
+  <div class="rb-head">
+    <h2>Create your resin face</h2>
+    <p>Every swatch below is a real photo from our own supply shelf. Mix glitters, mica, foil, gems and more, or start from a seasonal theme — the preview updates live.</p>
+    <p class="rb-price-note">Choose up to 5 materials free. Each one after that is $1. Adding your own photo is $1.</p>
+  </div>
+
+  <div class="rb-themes" id="themeRow"></div>
+
+  <div class="rb-grid">
+
+    <div class="rb-preview-wrap">
+      <div class="rb-preview-card">
+        <div class="rb-oval-stage">
+          <div class="rb-oval" id="rbOval">
+            <div class="layer-glow" id="layerGlow"></div>
+            <div class="rb-scatter" id="scatterCharms"></div>
+            <div class="rb-photo-insert" id="photoInsert"><img id="photoInsertImg" alt=""></div>
+          </div>
+        </div>
+
+        <div class="rb-recipe" id="recipeBox"></div>
+
+        <button class="rb-save-btn" id="rbSaveBtn">Copy my recipe</button>
+        <div class="rb-save-note" id="rbSaveNote"></div>
+      </div>
+    </div>
+
+    <div class="rb-options" id="optionsRoot">
+      <div class="rb-group">
+        <div class="rb-group-title">Glow color</div>
+        <div class="rb-group-sub">Sets the LED color under your resin — free.</div>
+        <div class="rb-swatch-row" id="glowRow"></div>
+      </div>
+
+      <div class="rb-group">
+        <div class="rb-group-title">Add a photo <small>+$1</small></div>
+        <div class="rb-group-sub">Upload a pet or portrait photo to set into the center, like a locket.</div>
+        <div class="rb-upload-row">
+          <button class="rb-upload-btn" id="rbUploadBtn">Choose photo</button>
+          <input type="file" accept="image/*" id="rbFileInput" style="display:none">
+          <span class="rb-upload-status" id="rbUploadStatus">No photo added</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
+<script>
+(function(){
+
+  const IMG = (key) => `images/${key}.jpg`;
+
+  const GLOWS = [
+    { id:'amber',  label:'Amber',  hex:'#F2A649' },
+    { id:'rose',   label:'Rose',   hex:'#F0729B' },
+    { id:'violet', label:'Violet', hex:'#A66BD9' },
+    { id:'teal',   label:'Teal',   hex:'#4FD6C4' },
+    { id:'ice',    label:'Ice',    hex:'#8FC7F2' },
+    { id:'gold',   label:'Gold',   hex:'#E8C77E' },
+  ];
+
+  // Each tile category renders as a stacked, tiled photo layer in the resin.
+  const CATEGORIES = [
+    { id:'glitter', title:'Glitter', sub:'Pick up to 2 — real jars from our shelf.', max:2,
+      basePrice:12, extra:1, blend:'screen', opacity:0.55,
+      items:[
+        {id:'teal',label:'Teal'},{id:'green',label:'Emerald'},{id:'magenta',label:'Magenta'},{id:'rose',label:'Rose'},
+        {id:'red',label:'Red'},{id:'amber',label:'Amber Gold'},{id:'black',label:'Black Holo'},{id:'purple',label:'Purple'},
+        {id:'blue',label:'Blue'},{id:'bronze',label:'Bronze'},{id:'olive',label:'Olive Gold'},{id:'silver',label:'Silver Holo'},
+      ], imgPrefix:'p_' },
+    { id:'mica', title:'Mica Powder', sub:'Smooth color washes — pick up to 2.', max:2,
+      basePrice:10, extra:1, blend:'lighten', opacity:0.4,
+      items:[
+        {id:'white',label:'White'},{id:'black',label:'Black'},{id:'bronze',label:'Bronze'},{id:'gold',label:'Gold'},
+        {id:'peach',label:'Peach'},{id:'red',label:'Red'},{id:'indigo',label:'Indigo'},{id:'sage',label:'Sage'},
+        {id:'teal',label:'Teal'},{id:'blue',label:'Blue'},
+      ], imgPrefix:'m_' },
+    { id:'foil', title:'Foil Flakes', sub:'Metallic flake — pick any.', max:99, itemPrice:2,
+      blend:'screen', opacity:0.4,
+      items:[
+        {id:'green',label:'Green'},{id:'gold',label:'Gold'},{id:'blue',label:'Blue'},{id:'magenta',label:'Magenta'},
+        {id:'black',label:'Black'},{id:'purple',label:'Purple'},{id:'bluemix',label:'Blue & Silver'},{id:'rosegold',label:'Rose Gold'},
+        {id:'silver',label:'Silver'},{id:'blackgold',label:'Black & Gold'},
+      ], imgPrefix:'f_' },
+    { id:'shimmer', title:'Shimmer Powder', sub:'Iridescent flake — pick any.', max:99, itemPrice:2,
+      blend:'lighten', opacity:0.42,
+      items:[
+        {id:'bluewhite',label:'Blue-White'},{id:'purpleblack',label:'Purple-Black'},{id:'peach',label:'Peach'},
+        {id:'pink',label:'Pink'},{id:'green',label:'Green'},{id:'white',label:'White Iridescent'},
+        {id:'bronze1',label:'Bronze'},{id:'bronze2',label:'Deep Bronze'},{id:'silver',label:'Silver'},
+      ], imgPrefix:'sh_' },
+    { id:'gems', title:'Gemstone mix', sub:'Real tray mixes — pick any.', max:99, itemPrice:3,
+      blend:'lighten', opacity:0.42,
+      items:[
+        {id:'marquise',label:'Marquise Mix'},{id:'square',label:'Square Jewel Mix'},
+        {id:'pastel',label:'Pastel Round'},{id:'teardrop',label:'Teardrop Mix'},
+      ], imgPrefix:'gem_' },
+    { id:'pearls', title:'Pearls', sub:'', max:99, itemPrice:3,
+      blend:'lighten', opacity:0.42,
+      items:[ {id:'pearl',label:'Cream Pearls'} ], imgPrefix:'gem_' },
+    { id:'shell', title:'Crushed shell & glass', sub:'Real crushed chip mix — pick any color.', max:99, itemPrice:2,
+      blend:'lighten', opacity:0.42,
+      items:[
+        {id:'magenta',label:'Magenta'},{id:'teal',label:'Teal'},{id:'plum',label:'Plum'},{id:'black',label:'Black'},
+        {id:'green',label:'Green'},{id:'blue',label:'Blue'},{id:'gold',label:'Gold'},{id:'purple',label:'Purple'},
+      ], imgPrefix:'shell_' },
+    { id:'flowers', title:'Dried flowers', sub:'Real pressed flowers — pick any.', max:99, itemPrice:2,
+      blend:'lighten', opacity:0.4,
+      items:[
+        {id:'violet',label:'Violet & Blue'},{id:'cream',label:'Cream & Gold'},
+        {id:'red',label:'Rose & Red'},{id:'mint',label:'Mint'},
+      ], imgPrefix:'flower_' },
+  ];
+
+  const CHARMS = {
+    id:'charms', title:'Leaf charms', sub:'Real metal charms, scattered through the resin — pick any.', itemPrice:2,
+    items:[ {id:'bronze',label:'Bronze'},{id:'silver',label:'Silver'},{id:'gold',label:'Gold'} ], imgPrefix:'charm_'
+  };
+
+  const THEMES = [
+    { id:'halloween', label:'Halloween', glow:'gold',  sel:{ glitter:['black','amber'], foil:['blackgold'], charms:['bronze'] } },
+    { id:'christmas', label:'Christmas', glow:'gold',  sel:{ glitter:['red','green'], foil:['gold'] } },
+    { id:'fall',      label:'Fall',      glow:'amber', sel:{ glitter:['bronze','amber'], flowers:['red'], charms:['bronze'] } },
+    { id:'winter',    label:'Winter',    glow:'ice',   sel:{ glitter:['silver','blue'], shimmer:['bluewhite'] } },
+    { id:'coastal',   label:'Coastal',   glow:'teal',  sel:{ glitter:['teal'], shell:['teal','blue'], pearls:['pearl'] } },
+  ];
+
+  const state = { glow:'amber', photoDataUrl:null, sel:{} };
+  CATEGORIES.forEach(c => state.sel[c.id] = new Set());
+  state.sel[CHARMS.id] = new Set();
+
+  function money(n){ return '$' + n.toFixed(n % 1 === 0 ? 0 : 2); }
+
+  function mulberry32(seed){
+    return function(){
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function pointsInOvalPx(count, seed){
+    const rnd = mulberry32(seed);
+    const pts = [];
+    for(let i=0;i<count;i++){
+      let x,y;
+      do { x = rnd()*2-1; y = rnd()*2-1; } while ((x*x+y*y) > 0.85);
+      pts.push({ x: 160 + x*126, y: 106 + y*82, r: rnd(), rot: rnd()*360 });
+    }
+    return pts;
+  }
+  const charmSeeds = {}; CHARMS.items.forEach((c,i) => charmSeeds[c.id] = 701+i);
+
+  const FREE_ALLOWANCE = 5;
+  const EXTRA_PRICE = 1;
+  const PHOTO_PRICE = 1;
+
+  function countSelections(){
+    let n = 0;
+    CATEGORIES.forEach(cat => n += state.sel[cat.id].size);
+    n += state.sel[CHARMS.id].size;
+    return n;
+  }
+
+  function computeTotal(){
+    const n = countSelections();
+    let total = Math.max(0, n - FREE_ALLOWANCE) * EXTRA_PRICE;
+    if(state.photoDataUrl) total += PHOTO_PRICE;
+    return total;
+  }
+
+  function render(){
+    const glow = GLOWS.find(g => g.id === state.glow);
+    document.getElementById('layerGlow').style.setProperty('--glow-color', glow.hex);
+
+    const oval = document.getElementById('rbOval');
+    oval.querySelectorAll('.layer-tile').forEach(n => n.remove());
+    const glowLayer = document.getElementById('layerGlow');
+
+    CATEGORIES.forEach(cat => {
+      [...state.sel[cat.id]].forEach(itemId => {
+        const layer = document.createElement('div');
+        layer.className = 'layer-tile';
+        layer.style.backgroundImage = `url(${IMG(cat.imgPrefix + itemId)})`;
+        layer.style.mixBlendMode = cat.blend;
+        layer.style.opacity = cat.opacity;
+        glowLayer.insertAdjacentElement('afterend', layer);
+      });
+    });
+
+    const scatterEl = document.getElementById('scatterCharms');
+    scatterEl.innerHTML = '';
+    [...state.sel[CHARMS.id]].forEach(itemId => {
+      const pts = pointsInOvalPx(4, charmSeeds[itemId]);
+      pts.forEach(p => {
+        const img = document.createElement('img');
+        img.src = IMG(CHARMS.imgPrefix + itemId);
+        const size = 26 + p.r*16;
+        img.style.width = size + 'px';
+        img.style.left = (p.x - size/2) + 'px';
+        img.style.top = (p.y - size/2) + 'px';
+        img.style.transform = `rotate(${p.rot}deg)`;
+        img.style.mixBlendMode = 'multiply';
+        img.style.opacity = 0.92;
+        scatterEl.appendChild(img);
+      });
+    });
+
+    document.getElementById('photoInsert').classList.toggle('is-active', !!state.photoDataUrl);
+    if(state.photoDataUrl) document.getElementById('photoInsertImg').src = state.photoDataUrl;
+
+    const rows = [['Glow', glow.label]];
+    CATEGORIES.forEach(cat => {
+      const labels = [...state.sel[cat.id]].map(id => cat.items.find(i=>i.id===id).label);
+      rows.push([cat.title, labels.length ? labels.join(', ') : 'None']);
+    });
+    const charmLabels = [...state.sel[CHARMS.id]].map(id => CHARMS.items.find(i=>i.id===id).label);
+    rows.push([CHARMS.title, charmLabels.length ? charmLabels.join(', ') : 'None']);
+    rows.push(['Photo', state.photoDataUrl ? 'Added' : 'None']);
+
+    const n = countSelections();
+    const usedNote = n <= FREE_ALLOWANCE
+      ? `${n} of ${FREE_ALLOWANCE} free`
+      : `${FREE_ALLOWANCE} free + ${n - FREE_ALLOWANCE} extra`;
+
+    document.getElementById('recipeBox').innerHTML =
+      rows.map(([k,v]) => `<div class="rb-recipe-row"><span>${k}</span><span>${v}</span></div>`).join('')
+      + `<div class="rb-recipe-row"><span>Materials chosen</span><span>${usedNote}</span></div>`
+      + `<div class="rb-recipe-row rb-total"><span>Total</span><span>${money(computeTotal())}</span></div>`;
+
+    document.getElementById('rbSaveNote').textContent = '';
+  }
+
+  function buildSingleSelect(container, items, onPick, chipFn, initialActiveId){
+    items.forEach(item => {
+      const btn = document.createElement('button');
+      btn.className = 'rb-swatch';
+      btn.type = 'button';
+      const chip = document.createElement('div');
+      chip.className = 'rb-swatch-chip round';
+      chipFn(chip, item);
+      const label = document.createElement('div');
+      label.className = 'rb-swatch-label';
+      label.textContent = item.label;
+      btn.appendChild(chip); btn.appendChild(label);
+      container.appendChild(btn);
+      if(item.id === initialActiveId) btn.classList.add('active');
+      btn.addEventListener('click', () => {
+        [...container.children].forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        onPick(item.id);
+        render();
+      });
+    });
+  }
+
+  function buildCategoryUI(cat){
+    const group = document.createElement('div');
+    group.className = 'rb-group';
+
+    const title = document.createElement('div');
+    title.className = 'rb-group-title';
+    const capNote = cat.max <= 2 ? `pick up to ${cat.max}` : 'pick any';
+    title.innerHTML = `<span>${cat.title}</span><small>${capNote}</small>`;
+    group.appendChild(title);
+
+    if(cat.sub){
+      const sub = document.createElement('div');
+      sub.className = 'rb-group-sub';
+      sub.textContent = cat.sub;
+      group.appendChild(sub);
+    }
+
+    const row = document.createElement('div');
+    row.className = 'rb-swatch-row';
+    group.appendChild(row);
+
+    cat.items.forEach(item => {
+      const btn = document.createElement('button');
+      btn.className = 'rb-swatch';
+      btn.type = 'button';
+      const chip = document.createElement('div');
+      chip.className = 'rb-swatch-chip';
+      chip.style.backgroundImage = `url(${IMG(cat.imgPrefix + item.id)})`;
+      const check = document.createElement('div');
+      check.className = 'rb-addin-check';
+      check.textContent = '✓';
+      chip.appendChild(check);
+      const label = document.createElement('div');
+      label.className = 'rb-swatch-label';
+      label.textContent = item.label;
+      btn.appendChild(chip); btn.appendChild(label);
+
+      row.appendChild(btn);
+      btn.addEventListener('click', () => {
+        const set = state.sel[cat.id];
+        if(set.has(item.id)){
+          set.delete(item.id);
+          btn.classList.remove('active');
+        } else {
+          if(cat.max && set.size >= cat.max){
+            const first = [...set][0];
+            set.delete(first);
+            [...row.children].forEach(b => {
+              if(b.querySelector('.rb-swatch-label').textContent === cat.items.find(i=>i.id===first).label) b.classList.remove('active');
+            });
+          }
+          set.add(item.id);
+          btn.classList.add('active');
+        }
+        render();
+      });
+    });
+
+    return group;
+  }
+
+  const root = document.getElementById('optionsRoot');
+  const photoGroup = root.lastElementChild; // "Add a photo" group, already in HTML
+
+  buildSingleSelect(document.getElementById('glowRow'), GLOWS,
+    id => state.glow = id,
+    (chip, item) => { chip.style.background = item.hex; chip.style.boxShadow = `0 0 14px ${item.hex}99`; },
+    state.glow);
+
+  CATEGORIES.forEach(cat => {
+    root.insertBefore(buildCategoryUI(cat), photoGroup);
+  });
+  root.insertBefore(buildCategoryUI(Object.assign({}, CHARMS, {max:99})), photoGroup);
+
+  function rebuildAllSwatchStates(){
+    document.querySelectorAll('#glowRow .rb-swatch').forEach((b,i) => b.classList.toggle('active', GLOWS[i].id === state.glow));
+    root.querySelectorAll('.rb-group').forEach(group => {
+      const titleSpan = group.querySelector('.rb-group-title span');
+      if(!titleSpan) return;
+      const allCats = CATEGORIES.concat([CHARMS]);
+      const cat = allCats.find(c => c.title === titleSpan.textContent);
+      if(!cat) return;
+      const swatches = group.querySelectorAll('.rb-swatch');
+      cat.items.forEach((item, i) => {
+        swatches[i].classList.toggle('active', state.sel[cat.id].has(item.id));
+      });
+    });
+  }
+
+  const themeRow = document.getElementById('themeRow');
+  THEMES.forEach(theme => {
+    const btn = document.createElement('button');
+    btn.className = 'rb-theme-btn';
+    btn.type = 'button';
+    btn.textContent = theme.label;
+    btn.addEventListener('click', () => {
+      state.glow = theme.glow;
+      CATEGORIES.forEach(cat => state.sel[cat.id] = new Set(theme.sel[cat.id] || []));
+      state.sel[CHARMS.id] = new Set(theme.sel.charms || []);
+      rebuildAllSwatchStates();
+      render();
+    });
+    themeRow.appendChild(btn);
+  });
+
+  const fileInput = document.getElementById('rbFileInput');
+  document.getElementById('rbUploadBtn').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.photoDataUrl = reader.result;
+      document.getElementById('rbUploadStatus').textContent = file.name;
+      render();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('rbSaveBtn').addEventListener('click', () => {
+    const glow = GLOWS.find(g => g.id === state.glow).label;
+    const parts = [`Glow: ${glow}`];
+    CATEGORIES.forEach(cat => {
+      const labels = [...state.sel[cat.id]].map(id => cat.items.find(i=>i.id===id).label);
+      parts.push(`${cat.title}: ${labels.join(', ') || 'none'}`);
+    });
+    const charmLabels = [...state.sel[CHARMS.id]].map(id => CHARMS.items.find(i=>i.id===id).label);
+    parts.push(`${CHARMS.title}: ${charmLabels.join(', ') || 'none'}`);
+    parts.push(`Photo: ${state.photoDataUrl ? 'yes' : 'no'}`);
+    parts.push(`Materials: ${countSelections()} chosen`);
+    parts.push(`Total: ${money(computeTotal())}`);
+    const text = 'My Luminary resin face — ' + parts.join(' · ');
+    const note = document.getElementById('rbSaveNote');
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(() => { note.textContent = 'Copied — paste it into your order note at checkout.'; })
+        .catch(() => { note.textContent = text; });
+    } else { note.textContent = text; }
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
