@@ -168,6 +168,28 @@
   }
   .palette button.sel { border-color: var(--text); }
 
+  /* The colour wheel itself is the affordance — no icon font needed. */
+  .picker-wrap {
+    position: relative; width: 30px; height: 30px;
+    border-radius: 50%; overflow: hidden; cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.35);
+    display: inline-flex; flex-shrink: 0;
+    background: conic-gradient(#f87171, #facc15, #34d399, #22d3ee,
+                               #4a90ff, #a855f7, #f472b6, #f87171);
+  }
+  .picker-wrap input[type="color"] {
+    position: absolute; inset: -4px; width: 140%; height: 140%;
+    border: none; padding: 0; background: none; cursor: pointer; opacity: 0;
+  }
+  .hexcode {
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+    color: var(--muted); align-self: center; letter-spacing: 0.04em;
+  }
+  .dark-warn {
+    font-size: 12px; color: #fbbf24; align-self: center;
+    flex-basis: 100%; margin-top: 4px;
+  }
+
   /* ---------- toast ---------- */
   #toast {
     position: fixed; bottom: 28px; left: 50%;
@@ -330,21 +352,59 @@
 
 const BAUD = 115200;
 
-// Colours offered to the customer. RGB values are sent to the bracelet.
-const COLOURS = [
-  { name: 'Purple', hex: '#a855f7', rgb: [168,  85, 247] },
-  { name: 'Blue',   hex: '#4a90ff', rgb: [ 74, 144, 255] },
-  { name: 'Teal',   hex: '#2dd4bf', rgb: [ 45, 212, 191] },
-  { name: 'Green',  hex: '#34d399', rgb: [ 52, 211, 153] },
-  { name: 'Gold',   hex: '#d4af6a', rgb: [212, 175, 106] },
-  { name: 'Orange', hex: '#fb923c', rgb: [251, 146,  60] },
-  { name: 'Rose',   hex: '#f472b6', rgb: [244, 114, 182] },
-  { name: 'Red',    hex: '#f87171', rgb: [248, 113, 113] },
-  { name: 'White',  hex: '#e2e8f0', rgb: [226, 232, 240] },
+// Quick-pick colours. These are shortcuts, not limits — the picker
+// below them reaches any colour. The bracelet stores three raw bytes,
+// so every one of the 16.7 million is equally valid to the firmware.
+const PRESET_COLOURS = [
+  '#f87171', '#fb923c', '#facc15', '#34d399', '#2dd4bf',
+  '#22d3ee', '#4a90ff', '#a855f7', '#f472b6', '#ffffff',
 ];
+
+function hexToRgb(hex) {
+  const v = parseInt(hex.slice(1), 16);
+  return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+}
+
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(v =>
+    Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('');
+}
+
+// A WS2812B set to a very dark colour is barely visible, and through a
+// resin face it disappears altogether. Worth telling the customer rather
+// than letting them wonder why their reminder seems not to fire.
+function isTooDark(hex) {
+  const [r, g, b] = hexToRgb(hex);
+  return Math.max(r, g, b) < 60;
+}
 
 // Repeat types — these numbers must match RepeatType in the firmware.
 const REPEAT_ONCE = 0, REPEAT_DAILY = 1, REPEAT_WEEKLY = 2, REPEAT_EVERY_N = 3;
+
+// LED patterns — these numbers must match config.h in the firmware.
+const LED_STEADY = 0, LED_FLASH = 1, LED_PULSE = 2;
+
+// Vibration styles — likewise.
+const VIB_SOLID = 0, VIB_PULSE = 1, VIB_NONE = 2;
+
+// What the customer picks, and what it means on the bracelet.
+// Duration is chosen to suit the pattern: three flashes shouldn't
+// buzz for ten seconds.
+const LIGHT_STYLES = [
+  { name: 'Flash 3 times',   pattern: LED_FLASH,  flashes: 3,  seconds: 3  },
+  { name: 'Flash 5 times',   pattern: LED_FLASH,  flashes: 5,  seconds: 4  },
+  { name: 'Flash for 10s',   pattern: LED_FLASH,  flashes: 0,  seconds: 10 },
+  { name: 'Slow pulse',      pattern: LED_PULSE,  flashes: 0,  seconds: 12 },
+  { name: 'Steady glow',     pattern: LED_STEADY, flashes: 0,  seconds: 10 },
+];
+
+function lightStyleIndex(pattern, flashes) {
+  for (let i = 0; i < LIGHT_STYLES.length; i++) {
+    const s = LIGHT_STYLES[i];
+    if (s.pattern === pattern && s.flashes === flashes) return i;
+  }
+  return 4;   // fall back to steady glow
+}
 
 // Day bit values — Sunday is bit 0, matching the RTC.
 const DAY_NAMES = ['S','M','T','W','T','F','S'];
@@ -353,6 +413,33 @@ const DAY_FULL  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','
 let port = null, reader = null, writer = null;
 let reminders = [];
 let nextId = 1;
+
+/* ------------------------------------------------------------------
+   Labels are the customer's own words ("Morning medication"). The
+   bracelet has no room for text, so it only stores the time, colour
+   and pattern. We keep the labels in this browser instead, matched
+   back up by time and colour when we read the bracelet.
+
+   Consequence worth knowing: set up on one computer, edit on another,
+   and the reminders come back but the labels don't.
+   ------------------------------------------------------------------ */
+const LABEL_KEY = 'lj_labels_v1';
+
+function labelKeyFor(r) {
+  return r.time + '|' + r.colour;
+}
+
+function loadLabels() {
+  try { return JSON.parse(localStorage.getItem(LABEL_KEY)) || {}; }
+  catch { return {}; }
+}
+
+function saveLabels() {
+  const map = {};
+  reminders.forEach(r => { if (r.label) map[labelKeyFor(r)] = r.label; });
+  try { localStorage.setItem(LABEL_KEY, JSON.stringify(map)); } catch { /* private mode */ }
+}
+
 
 /* ---------------- small helpers ---------------- */
 
@@ -438,8 +525,11 @@ async function connect() {
 
     setStatus('Bracelet connected', 'on');
     setConnected(true);
-    toast('Connected');
     await refreshStatus();
+
+    // Show what's actually on the bracelet rather than the example.
+    const loaded = await loadFromBracelet();
+    if (!loaded) toast('Connected');
 
   } catch (err) {
     if (err.name === 'NotFoundError') {
@@ -498,6 +588,66 @@ async function refreshStatus() {
   }
 }
 
+/* Read whatever is already on the bracelet and show it, so the customer
+   sees their real reminders rather than a blank page. */
+async function loadFromBracelet() {
+  const reply = await sendCommand('LIST', 1500);
+  if (!reply.startsWith('OK')) return false;
+
+  const labels = loadLabels();
+  const found = [];
+
+  reply.split('\n').forEach(line => {
+    const parts = line.trim().split(/\s+/);
+    if (parts[0] !== 'R') return;
+
+    // R <i> <h> <mi> <r> <g> <b> <ledPattern> <flashes> <vib> <secs>
+    //   <repeat> <days> <interval> <y> <m> <d> [label...]
+    // Seventeen tokens, then the label — which may itself contain
+    // spaces, so it's everything left over rather than one token.
+    if (parts.length < 17) return;
+    const n = parts.slice(0, 17).map(Number);
+    if (n.slice(1).some(Number.isNaN)) return;
+
+    const hour = n[2], minute = n[3];
+    const time = String(hour).padStart(2,'0') + ':' + String(minute).padStart(2,'0');
+
+    const r = {
+      id: nextId++,
+      label: parts.slice(17).join(' '),
+      time,
+      colour: rgbToHex(n[4], n[5], n[6]),
+      lightStyle: lightStyleIndex(n[7], n[8]),
+      vibration: n[9],
+      repeat: n[11],
+      days: n[12],
+      interval: n[13] || 2,
+      start: n[14] && n[15] && n[16]
+        ? n[14] + '-' + String(n[15]).padStart(2,'0') + '-' + String(n[16]).padStart(2,'0')
+        : new Date().toISOString().slice(0,10)
+    };
+
+    // The bracelet now carries the label itself, so it survives moving
+    // to another computer. Fall back to this browser's copy only if the
+    // bracelet has none (a reminder written by an older firmware).
+    if (!r.label) {
+      const labels = loadLabels();
+      r.label = labels[labelKeyFor(r)] || '';
+    }
+
+    found.push(r);
+  });
+
+  if (found.length > 0) {
+    reminders = found;
+    render();
+    toast('Loaded ' + found.length + ' reminder' + (found.length > 1 ? 's' : '') +
+          ' from your bracelet');
+    return true;
+  }
+  return false;
+}
+
 async function syncClock() {
   const now = new Date();
   const command = ['TIME',
@@ -521,8 +671,9 @@ function blankReminder() {
     id: nextId++,
     label: '',
     time: '08:00',
-    colour: 0,
-    vibration: 0,          // 0 solid, 1 pulse
+    colour: '#a855f7',
+    lightStyle: 0,         // index into LIGHT_STYLES
+    vibration: 0,          // 0 solid, 1 pulse, 2 none
     repeat: REPEAT_DAILY,
     days: 0,
     interval: 2,
@@ -542,14 +693,13 @@ function render() {
   }
 
   reminders.forEach(r => {
-    const colour = COLOURS[r.colour];
 
     const box = document.createElement('div');
     box.className = 'reminder';
     box.innerHTML = `
       <div class="reminder-top">
         <button class="swatch" data-act="palette" data-id="${r.id}"
-                style="background:${colour.hex}" title="Change colour"></button>
+                style="background:${r.colour}" title="Change colour"></button>
         <input type="text" class="reminder-title" data-act="label" data-id="${r.id}"
                placeholder="What's this for?" value="${r.label.replace(/"/g,'&quot;')}"
                style="border:none;background:none;padding:0;font-size:15px">
@@ -558,10 +708,19 @@ function render() {
       </div>
 
       <div class="palette" data-palette="${r.id}">
-        ${COLOURS.map((c, i) => `
-          <button data-act="colour" data-id="${r.id}" data-colour="${i}"
-                  class="${i === r.colour ? 'sel' : ''}"
-                  style="background:${c.hex}" title="${c.name}"></button>`).join('')}
+        ${PRESET_COLOURS.map(hex => `
+          <button data-act="colour" data-id="${r.id}" data-colour="${hex}"
+                  class="${hex.toLowerCase() === r.colour.toLowerCase() ? 'sel' : ''}"
+                  style="background:${hex}" title="${hex}"></button>`).join('')}
+
+        <label class="picker-wrap" title="Any colour you like">
+          <input type="color" data-act="colourPick" data-id="${r.id}"
+                 value="${r.colour}">
+
+        </label>
+
+        <span class="hexcode">${r.colour.toUpperCase()}</span>
+        ${isTooDark(r.colour) ? '<span class="dark-warn">Very dark \u2014 may be hard to see through the face</span>' : ''}
       </div>
 
       <div class="field-grid">
@@ -570,10 +729,19 @@ function render() {
           <input type="time" data-act="time" data-id="${r.id}" value="${r.time}">
         </div>
         <div>
+          <label>Light</label>
+          <select data-act="lightStyle" data-id="${r.id}">
+            ${LIGHT_STYLES.map((st, i) => `
+              <option value="${i}" ${i === r.lightStyle ? 'selected' : ''}>${st.name}</option>
+            `).join('')}
+          </select>
+        </div>
+        <div>
           <label>Feels like</label>
           <select data-act="vibration" data-id="${r.id}">
             <option value="0" ${r.vibration === 0 ? 'selected' : ''}>One long buzz</option>
             <option value="1" ${r.vibration === 1 ? 'selected' : ''}>Gentle pulses</option>
+            <option value="2" ${r.vibration === 2 ? 'selected' : ''}>No vibration</option>
           </select>
         </div>
         <div>
@@ -631,10 +799,17 @@ $('reminderList').addEventListener('click', e => {
       p.classList.toggle('open');
       break;
     }
-    case 'colour':
-      r.colour = Number(btn.dataset.colour);
+    case 'colour': {
+      // The label is filed under time+colour, so move it with the change.
+      const oldKey = labelKeyFor(r);
+      r.colour = btn.dataset.colour;
+      const labels = loadLabels();
+      delete labels[oldKey];
+      try { localStorage.setItem(LABEL_KEY, JSON.stringify(labels)); } catch {}
+      saveLabels();
       render();
       break;
+    }
     case 'day':
       r.days ^= (1 << Number(btn.dataset.day));
       render();
@@ -653,10 +828,29 @@ $('reminderList').addEventListener('input', e => {
   if (!r) return;
 
   switch (el.dataset.act) {
-    case 'label':     r.label = el.value; break;
+    case 'label':     r.label = el.value; saveLabels(); break;
     case 'time':      r.time = el.value; break;
     case 'start':     r.start = el.value; break;
-    case 'vibration': r.vibration = Number(el.value); break;
+    case 'vibration':  r.vibration  = Number(el.value); break;
+    case 'lightStyle': r.lightStyle = Number(el.value); break;
+    case 'colourPick': {
+      const oldKey = labelKeyFor(r);
+      r.colour = el.value;
+      const labels = loadLabels();
+      delete labels[oldKey];
+      try { localStorage.setItem(LABEL_KEY, JSON.stringify(labels)); } catch {}
+      saveLabels();
+      // Repaint the swatch and hex readout live, without a full re-render:
+      // rebuilding mid-drag would tear the picker away from the cursor.
+      const card = el.closest('.reminder');
+      if (card) {
+        const sw = card.querySelector('.swatch');
+        if (sw) sw.style.background = r.colour;
+        const hx = card.querySelector('.hexcode');
+        if (hx) hx.textContent = r.colour.toUpperCase();
+      }
+      break;
+    }
     case 'interval':  r.interval = Number(el.value); break;
     case 'repeat':
       r.repeat = Number(el.value);
@@ -688,17 +882,22 @@ async function saveAll() {
 
     for (const r of reminders) {
       const [hour, minute] = r.time.split(':').map(Number);
-      const [red, green, blue] = COLOURS[r.colour].rgb;
+      const [red, green, blue] = hexToRgb(r.colour);
       const [year, month, day] = r.start.split('-').map(Number);
 
       // Daily needs no day flags; the firmware ignores them.
       const days = (r.repeat === REPEAT_DAILY || r.repeat === REPEAT_ONCE) ? 0 : r.days;
 
+      const style = LIGHT_STYLES[r.lightStyle] || LIGHT_STYLES[4];
+
+      // Fifteen numbers, then the label as the rest of the line.
+      // The label goes last so it may contain spaces.
       const command = ['ADD',
-        hour, minute, red, green, blue, r.vibration,
+        hour, minute, red, green, blue,
+        style.pattern, style.flashes, r.vibration, style.seconds,
         r.repeat, days, r.interval,
         year, month, day
-      ].join(' ');
+      ].join(' ') + (r.label ? ' ' + r.label.slice(0, 15) : '');
 
       const reply = await sendCommand(command, 400);
       if (!reply.includes('OK')) throw new Error(reply || 'no reply from bracelet');
@@ -707,6 +906,7 @@ async function saveAll() {
     const saved = await sendCommand('SAVE', 2500);   // flash writes take longer
     if (!saved.includes('OK')) throw new Error(saved || 'the bracelet didn\'t confirm');
 
+    saveLabels();
     toast('Saved to your bracelet');
     await refreshStatus();
 
@@ -738,7 +938,7 @@ if (!('serial' in navigator)) {
 // Start with one example so the page never looks empty.
 reminders.push({
   id: nextId++, label: 'Morning medication', time: '08:00',
-  colour: 0, vibration: 0, repeat: REPEAT_DAILY, days: 0, interval: 2,
+  colour: '#a855f7', lightStyle: 0, vibration: 0, repeat: REPEAT_DAILY, days: 0, interval: 2,
   start: new Date().toISOString().slice(0, 10)
 });
 render();
