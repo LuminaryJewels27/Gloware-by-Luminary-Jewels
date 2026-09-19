@@ -878,7 +878,7 @@ async function saveAll() {
   $('saveBtn').textContent = 'Saving…';
 
   try {
-    await sendCommand('CLEAR');
+    await sendCommand('CLEAR', 1200);
 
     for (const r of reminders) {
       const [hour, minute] = r.time.split(':').map(Number);
@@ -899,11 +899,12 @@ async function saveAll() {
         year, month, day
       ].join(' ') + (r.label ? ' ' + r.label.slice(0, 15) : '');
 
-      const reply = await sendCommand(command, 400);
+      // Generous: the bracelet may be mid-reminder when this arrives.
+      const reply = await sendCommand(command, 1200);
       if (!reply.includes('OK')) throw new Error(reply || 'no reply from bracelet');
     }
 
-    const saved = await sendCommand('SAVE', 2500);   // flash writes take longer
+    const saved = await sendCommand('SAVE', 4000);   // flash writes take longer
     if (!saved.includes('OK')) throw new Error(saved || 'the bracelet didn\'t confirm');
 
     saveLabels();
