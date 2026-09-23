@@ -474,32 +474,83 @@ function setConnected(yes) {
 
 /* ---------------- serial ---------------- */
 
-async function sendCommand(command, waitMs = 600) {
+/* ------------------------------------------------------------------
+   Reading replies from the bracelet.
+
+   One background loop reads the serial port continuously and files
+   whole lines into a queue. Commands then take lines off that queue.
+
+   This matters. The obvious approach — racing reader.read() against a
+   timeout — leaks: when the timeout wins, the read is still pending,
+   and whatever arrives next is swallowed by that abandoned read and
+   credited to the wrong command. One late reply then knocks every
+   following one out of step.
+   ------------------------------------------------------------------ */
+
+let incomingLines = [];      // complete lines waiting to be claimed
+let partialLine   = '';      // bytes received since the last newline
+let readerLoopRunning = false;
+
+async function startReaderLoop() {
+  if (readerLoopRunning) return;
+  readerLoopRunning = true;
+
+  try {
+    while (port && port.readable && reader) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+
+      partialLine += new TextDecoder().decode(value);
+
+      // Hand over every complete line; keep the remainder for next time.
+      let cut;
+      while ((cut = partialLine.indexOf('\n')) >= 0) {
+        const line = partialLine.slice(0, cut).trim();
+        partialLine = partialLine.slice(cut + 1);
+        if (line) { incomingLines.push(line); log('< ' + line); }
+      }
+    }
+  } catch (err) {
+    // Port closed or disconnected — the loop simply ends.
+  } finally {
+    readerLoopRunning = false;
+  }
+}
+
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+async function sendCommand(command, waitMs = 1500) {
   if (!writer) throw new Error('not connected');
+
+  // Anything still queued belongs to an earlier command. Drop it, so a
+  // stale line can't be mistaken for this command's reply.
+  incomingLines = [];
 
   log('> ' + command);
   await writer.write(new TextEncoder().encode(command + '\n'));
 
-  // Collect whatever comes back within the window.
-  let response = '';
   const deadline = Date.now() + waitMs;
+  let collected = [];
 
+  // Wait for the line that concludes the reply: every command answers
+  // with OK or ERR.
   while (Date.now() < deadline) {
-    const remaining = deadline - Date.now();
-    const result = await Promise.race([
-      reader.read(),
-      new Promise(resolve => setTimeout(() => resolve({ timeout: true }), remaining))
-    ]);
+    while (incomingLines.length) collected.push(incomingLines.shift());
 
-    if (result.timeout) break;
-    if (result.done) break;
-    if (result.value) response += new TextDecoder().decode(result.value);
-    if (response.includes('\n') && waitMs <= 600) break;
+    const finished = collected.some(l => l.startsWith('OK') || l.startsWith('ERR'));
+    if (finished) {
+      // LIST sends "OK count N" and then one line per reminder, so give
+      // the trailing lines a moment to arrive before moving on.
+      await wait(120);
+      while (incomingLines.length) collected.push(incomingLines.shift());
+      break;
+    }
+
+    await wait(20);
   }
 
-  const clean = response.trim();
-  if (clean) clean.split('\n').forEach(l => log('< ' + l.trim()));
-  return clean;
+  return collected.join('\n').trim();
 }
 
 async function connect() {
@@ -512,6 +563,11 @@ async function connect() {
 
     writer = port.writable.getWriter();
     reader = port.readable.getReader();
+
+    // The background reader must be running before any command is sent.
+    incomingLines = [];
+    partialLine   = '';
+    startReaderLoop();
 
     setStatus('Checking the bracelet…');
     const reply = await sendCommand('PING');
@@ -550,6 +606,8 @@ async function disconnect() {
   } catch (e) { /* already gone */ }
 
   port = reader = writer = null;
+  incomingLines = [];
+  partialLine   = '';
   setConnected(false);
   setStatus('Not connected');
 }
