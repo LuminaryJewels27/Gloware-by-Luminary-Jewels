@@ -936,7 +936,7 @@ async function saveAll() {
   $('saveBtn').textContent = 'Saving…';
 
   try {
-    await sendCommand('CLEAR', 1200);
+    await sendCommand('CLEAR', 3000);
 
     for (const r of reminders) {
       const [hour, minute] = r.time.split(':').map(Number);
@@ -958,11 +958,11 @@ async function saveAll() {
       ].join(' ') + (r.label ? ' ' + r.label.slice(0, 15) : '');
 
       // Generous: the bracelet may be mid-reminder when this arrives.
-      const reply = await sendCommand(command, 1200);
+      const reply = await sendCommand(command, 3000);
       if (!reply.includes('OK')) throw new Error(reply || 'no reply from bracelet');
     }
 
-    const saved = await sendCommand('SAVE', 4000);   // flash writes take longer
+    const saved = await sendCommand('SAVE', 6000);   // flash writes take longer
     if (!saved.includes('OK')) throw new Error(saved || 'the bracelet didn\'t confirm');
 
     saveLabels();
@@ -970,7 +970,12 @@ async function saveAll() {
     await refreshStatus();
 
   } catch (err) {
-    toast('Something went wrong: ' + err.message);
+    // A timeout here almost always means the bracelet was busy playing a
+    // reminder. Say so, rather than leaving the customer guessing.
+    const hint = err.message.includes('no reply')
+      ? 'The bracelet didn\'t answer — it may have been buzzing a reminder. Try again.'
+      : 'Something went wrong: ' + err.message;
+    toast(hint);
     log('! ' + err.message);
   } finally {
     $('saveBtn').disabled = false;
