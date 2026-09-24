@@ -318,7 +318,10 @@
     <p class="section-note">
       This replaces everything currently on the bracelet with the list above.
     </p>
-    <button class="btn-primary" id="saveBtn" disabled>Save to Bracelet</button>
+    <div class="btn-row">
+      <button class="btn-primary" id="saveBtn" disabled>Save to Bracelet</button>
+      <button class="btn-outline" id="wipeBtn" disabled>Erase All Reminders</button>
+    </div>
 
     <details>
       <summary>Connection details</summary>
@@ -352,13 +355,37 @@
 
 const BAUD = 115200;
 
-// Quick-pick colours. These are shortcuts, not limits — the picker
-// below them reaches any colour. The bracelet stores three raw bytes,
-// so every one of the 16.7 million is equally valid to the firmware.
+/* ------------------------------------------------------------------
+   The colour palette.
+
+   These ten are chosen because they stay clearly distinct from each
+   other on a WS2812B seen through a resin face — which is a much
+   harder test than looking good on a screen.
+
+   Every one is fully saturated. Pale and pastel shades (peach, blush,
+   sage) wash out to near-white on this LED, which defeats the whole
+   point of colour-coding a reminder. They are deliberately not here.
+
+   The hues are spread around the colour wheel so no two sit close
+   enough to be confused at a glance on someone's wrist.
+   ------------------------------------------------------------------ */
 const PRESET_COLOURS = [
-  '#f87171', '#fb923c', '#facc15', '#34d399', '#2dd4bf',
-  '#22d3ee', '#4a90ff', '#a855f7', '#f472b6', '#ffffff',
+  { hex: '#ff0000', name: 'Red'     },
+  { hex: '#ff5000', name: 'Orange'  },
+  { hex: '#ffc800', name: 'Amber'   },
+  { hex: '#a0ff00', name: 'Lime'    },
+  { hex: '#00ff00', name: 'Green'   },
+  { hex: '#00ff96', name: 'Mint'    },
+  { hex: '#00c8ff', name: 'Cyan'    },
+  { hex: '#003cff', name: 'Blue'    },
+  { hex: '#8c00ff', name: 'Violet'  },
+  { hex: '#ff0096', name: 'Magenta' },
 ];
+
+function colourName(hex) {
+  const found = PRESET_COLOURS.find(c => c.hex.toLowerCase() === hex.toLowerCase());
+  return found ? found.name : 'Custom';
+}
 
 function hexToRgb(hex) {
   const v = parseInt(hex.slice(1), 16);
@@ -387,23 +414,33 @@ const LED_STEADY = 0, LED_FLASH = 1, LED_PULSE = 2;
 // Vibration styles — likewise.
 const VIB_SOLID = 0, VIB_PULSE = 1, VIB_NONE = 2;
 
-// What the customer picks, and what it means on the bracelet.
-// Duration is chosen to suit the pattern: three flashes shouldn't
-// buzz for ten seconds.
+/* What the customer picks, and what it means on the bracelet.
+   A flash cycle is 800ms, so five flashes run about four seconds and
+   ten run about eight. Durations are set to let each pattern finish. */
 const LIGHT_STYLES = [
-  { name: 'Flash 3 times',   pattern: LED_FLASH,  flashes: 3,  seconds: 3  },
-  { name: 'Flash 5 times',   pattern: LED_FLASH,  flashes: 5,  seconds: 4  },
-  { name: 'Flash for 10s',   pattern: LED_FLASH,  flashes: 0,  seconds: 10 },
-  { name: 'Slow pulse',      pattern: LED_PULSE,  flashes: 0,  seconds: 12 },
-  { name: 'Steady glow',     pattern: LED_STEADY, flashes: 0,  seconds: 10 },
+  { name: 'Flash 5 times',     pattern: LED_FLASH,  flashes: 5,  seconds: 5  },
+  { name: 'Flash 10 times',    pattern: LED_FLASH,  flashes: 10, seconds: 9  },
+  { name: 'Flash for 10 sec',  pattern: LED_FLASH,  flashes: 0,  seconds: 10 },
+  { name: 'Flash for 15 sec',  pattern: LED_FLASH,  flashes: 0,  seconds: 15 },
+  { name: 'Slow pulse 10 sec', pattern: LED_PULSE,  flashes: 0,  seconds: 10 },
+  { name: 'Slow pulse 15 sec', pattern: LED_PULSE,  flashes: 0,  seconds: 15 },
+  { name: 'Steady 10 sec',     pattern: LED_STEADY, flashes: 0,  seconds: 10 },
+  { name: 'Steady 15 sec',     pattern: LED_STEADY, flashes: 0,  seconds: 15 },
 ];
 
-function lightStyleIndex(pattern, flashes) {
+function lightStyleIndex(pattern, flashes, seconds) {
+  // Several styles share a pattern now (10 sec and 15 sec versions), so
+  // the duration is part of what identifies which one was chosen.
+  for (let i = 0; i < LIGHT_STYLES.length; i++) {
+    const s = LIGHT_STYLES[i];
+    if (s.pattern === pattern && s.flashes === flashes && s.seconds === seconds) return i;
+  }
+  // Close enough: same pattern and flash count, different length.
   for (let i = 0; i < LIGHT_STYLES.length; i++) {
     const s = LIGHT_STYLES[i];
     if (s.pattern === pattern && s.flashes === flashes) return i;
   }
-  return 4;   // fall back to steady glow
+  return 0;
 }
 
 // Day bit values — Sunday is bit 0, matching the RTC.
@@ -469,6 +506,7 @@ function setConnected(yes) {
   $('connectBtn').textContent = yes ? 'Disconnect' : 'Connect Bracelet';
   $('syncBtn').disabled = !yes;
   $('saveBtn').disabled = !yes;
+  $('wipeBtn').disabled = !yes;
   $('deviceInfo').style.display = yes ? 'grid' : 'none';
 }
 
@@ -675,7 +713,7 @@ async function loadFromBracelet() {
       label: parts.slice(17).join(' '),
       time,
       colour: rgbToHex(n[4], n[5], n[6]),
-      lightStyle: lightStyleIndex(n[7], n[8]),
+      lightStyle: lightStyleIndex(n[7], n[8], n[10]),
       vibration: n[9],
       repeat: n[11],
       days: n[12],
@@ -729,7 +767,7 @@ function blankReminder() {
     id: nextId++,
     label: '',
     time: '08:00',
-    colour: '#a855f7',
+    colour: '#ff0000',
     lightStyle: 0,         // index into LIGHT_STYLES
     vibration: 0,          // 0 solid, 1 pulse, 2 none
     repeat: REPEAT_DAILY,
@@ -988,6 +1026,28 @@ async function saveAll() {
 $('connectBtn').addEventListener('click', connect);
 $('syncBtn').addEventListener('click', syncClock);
 $('saveBtn').addEventListener('click', saveAll);
+$('wipeBtn').addEventListener('click', async () => {
+  if (!confirm('Erase every reminder on the bracelet? This cannot be undone.')) return;
+
+  $('wipeBtn').disabled = true;
+  $('wipeBtn').textContent = 'Erasing…';
+  try {
+    await sendCommand('CLEAR', 3000);
+    const done = await sendCommand('SAVE', 6000);
+    if (!done.includes('OK')) throw new Error(done || 'no reply from bracelet');
+
+    reminders = [];
+    render();
+    toast('All reminders erased');
+    await refreshStatus();
+  } catch (err) {
+    toast('Couldn\'t erase: ' + err.message);
+  } finally {
+    $('wipeBtn').disabled = false;
+    $('wipeBtn').textContent = 'Erase All Reminders';
+  }
+});
+
 $('addBtn').addEventListener('click', () => {
   reminders.push(blankReminder());
   render();
@@ -1002,7 +1062,7 @@ if (!('serial' in navigator)) {
 // Start with one example so the page never looks empty.
 reminders.push({
   id: nextId++, label: 'Morning medication', time: '08:00',
-  colour: '#a855f7', lightStyle: 0, vibration: 0, repeat: REPEAT_DAILY, days: 0, interval: 2,
+  colour: '#ff0000', lightStyle: 0, vibration: 0, repeat: REPEAT_DAILY, days: 0, interval: 2,
   start: new Date().toISOString().slice(0, 10)
 });
 render();
