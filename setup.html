@@ -181,14 +181,22 @@
     position: absolute; inset: -4px; width: 140%; height: 140%;
     border: none; padding: 0; background: none; cursor: pointer; opacity: 0;
   }
+  .picker-note {
+    font-size: 11px; color: var(--gold-dim); align-self: center;
+    letter-spacing: 0.04em;
+  }
   .hexcode {
     font-family: ui-monospace, Menlo, monospace; font-size: 12px;
     color: var(--muted); align-self: center; letter-spacing: 0.04em;
   }
   .dark-warn {
-    font-size: 12px; color: #fbbf24; align-self: center;
-    flex-basis: 100%; margin-top: 4px;
+    font-size: 12.5px; line-height: 1.5; color: #fbbf24;
+    flex-basis: 100%; margin-top: 10px;
+    background: rgba(251,191,36,0.08);
+    border: 1px solid rgba(251,191,36,0.28);
+    border-radius: 7px; padding: 9px 12px;
   }
+  .dark-warn strong { color: #fcd34d; }
 
   /* ---------- toast ---------- */
   #toast {
@@ -305,6 +313,12 @@
     <h2>2. Your Reminders</h2>
     <p class="section-note">
       Pick a time, a colour, and how you'd like it to feel. Tap the circle to change colour.
+      <br><br>
+      <strong>About the colours:</strong> the nine shown are chosen because they stay
+      clearly different from each other on the bracelet. You can pick any colour you
+      like using the wheel, but pale shades — peach, blush, sage — come out looking
+      close to white once they're glowing through the face, which makes reminders hard
+      to tell apart at a glance.
     </p>
 
     <div id="reminderList"></div>
@@ -819,8 +833,15 @@ function render() {
         </label>
 
         <span class="hexcode">${colourName(r.colour)}</span>
+
+        <span class="picker-note">&#8592; any colour</span>
+
         ${colourName(r.colour) === 'Custom'
-          ? '<span class="dark-warn">Custom colours can be harder to tell apart on the wrist. The ten above are chosen to stay distinct.</span>'
+          ? `<span class="dark-warn">
+               <strong>Custom colour.</strong> This may look washed out or close to
+               white on the bracelet, and harder to tell apart from your other
+               reminders. The nine above are chosen to stay clearly different.
+             </span>`
           : ''}
       </div>
 
