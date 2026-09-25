@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -181,6 +182,21 @@
     position: absolute; inset: -4px; width: 140%; height: 140%;
     border: none; padding: 0; background: none; cursor: pointer; opacity: 0;
   }
+  .clock-warn {
+    display: none;
+    font-size: 13.5px; line-height: 1.55;
+    border-radius: 9px; padding: 12px 15px; margin-top: 16px;
+    background: rgba(251,191,36,0.08);
+    border: 1px solid rgba(251,191,36,0.3);
+    color: #fbbf24;
+  }
+  .clock-warn.show { display: block; }
+  .clock-warn.urgent {
+    background: rgba(248,113,113,0.09);
+    border-color: rgba(248,113,113,0.35);
+    color: #fca5a5;
+  }
+
   .picker-note {
     font-size: 11px; color: var(--gold-dim); align-self: center;
     letter-spacing: 0.04em;
@@ -287,6 +303,8 @@
       <button class="btn-primary" id="connectBtn">Connect Bracelet</button>
       <button class="btn-outline" id="syncBtn" disabled>Sync Clock</button>
     </div>
+
+    <div class="clock-warn" id="clockWarn"></div>
 
     <div class="device-info" id="deviceInfo" style="display:none">
       <div class="info-item">
@@ -646,6 +664,13 @@ async function connect() {
   } catch (err) {
     if (err.name === 'NotFoundError') {
       setStatus('Not connected');   // customer closed the picker — not an error
+    } else if (err.message && err.message.toLowerCase().includes('failed to open')) {
+      // Easily the most common connection problem, and the browser's own
+      // wording gives the customer nothing to act on.
+      setStatus('Another program is using the bracelet', 'err');
+      toast('Close any other tab or program connected to your bracelet, ' +
+            'then unplug it, plug it back in, and try again.');
+      log('! ' + err.message);
     } else {
       setStatus('Couldn\'t connect: ' + err.message, 'err');
       log('! ' + err.message);
@@ -664,6 +689,7 @@ async function disconnect() {
   port = reader = writer = null;
   incomingLines = [];
   partialLine   = '';
+  clearClockWarning();
   setConnected(false);
   setStatus('Not connected');
 }
@@ -679,10 +705,10 @@ async function refreshStatus() {
   const charge  = reply.match(/charge (\w+)/);
   const count   = reply.match(/reminders (\d+)/);
   const invalid = reply.includes('clock invalid');
+  const stamp   = reply.match(/clock valid (\d+)-(\d+)-(\d+) (\d+):(\d+)/);
 
   if (battery) {
     const volts = parseFloat(battery[1]);
-    // Rough percentage across the usable range of a LiPo cell.
     const pct = Math.max(0, Math.min(100,
       Math.round(((volts - 3.3) / (4.2 - 3.3)) * 100)));
     $('infoBattery').textContent = pct + '%';
@@ -694,12 +720,76 @@ async function refreshStatus() {
       charge[1] === 'full'     ? 'Fully charged' : 'On battery';
   }
 
-  $('infoClock').textContent = invalid ? 'Needs syncing' : 'Set';
   if (count) $('infoCount').textContent = count[1];
 
+  /* ------------------------------------------------------------------
+     The clock needs watching on every connect, for two reasons.
+
+     A bracelet that has never been set will never fire anything, and
+     it fails silently — the customer just thinks it's broken.
+
+     And the bracelet stores plain wall-clock time with no notion of
+     time zones. So when the clocks go forward or back, every reminder
+     is an hour out until someone syncs again. That will happen to
+     every customer twice a year, and the bracelet cannot know it has.
+
+     Comparing against this computer's clock catches both.
+     ------------------------------------------------------------------ */
+  clearClockWarning();
+
   if (invalid) {
-    toast('Your bracelet has lost the time — tap Sync Clock.');
+    $('infoClock').textContent = 'Not set';
+    showClockWarning(
+      'Your bracelet does not know what time it is, so reminders will not fire. ' +
+      'Tap Sync Clock to fix it.', true);
+    return;
   }
+
+  $('infoClock').textContent = 'Set';
+
+  if (stamp) {
+    const onDevice = new Date(
+      Number(stamp[1]), Number(stamp[2]) - 1, Number(stamp[3]),
+      Number(stamp[4]), Number(stamp[5]), 0);
+    const driftMin = Math.abs(Date.now() - onDevice.getTime()) / 60000;
+
+    if (driftMin > 30) {
+      const hours = Math.round(driftMin / 60);
+
+      if (hours > 48) {
+        // A clock this far out has reset rather than drifted — most
+        // likely the battery went flat. "Out by 235257 hours" is true
+        // and useless; say what actually happened.
+        $('infoClock').textContent = 'Wrong date';
+        showClockWarning(
+          'Your bracelet has lost track of the date, which usually means the ' +
+          'battery ran flat. Your reminders are safe, but they will not fire ' +
+          'until you tap Sync Clock.', true);
+      } else {
+        $('infoClock').textContent = 'Out by ' + hours + 'h';
+        showClockWarning(
+          'Your bracelet\'s clock is about ' + hours + ' hour' +
+          (hours === 1 ? '' : 's') + ' away from this computer, so reminders ' +
+          'will go off at the wrong time. This usually happens after the ' +
+          'clocks change for daylight saving. Tap Sync Clock to fix it.', true);
+      }
+    } else if (driftMin > 2) {
+      $('infoClock').textContent = 'Out by ' + Math.round(driftMin) + ' min';
+      showClockWarning(
+        'Your bracelet\'s clock has drifted by about ' + Math.round(driftMin) +
+        ' minutes. Tap Sync Clock to correct it.', false);
+    }
+  }
+}
+
+function showClockWarning(message, urgent) {
+  const box = $('clockWarn');
+  box.textContent = message;
+  box.className = 'clock-warn' + (urgent ? ' urgent' : '') + ' show';
+}
+
+function clearClockWarning() {
+  $('clockWarn').className = 'clock-warn';
 }
 
 /* Read whatever is already on the bracelet and show it, so the customer
@@ -771,10 +861,11 @@ async function syncClock() {
 
   const reply = await sendCommand(command);
   if (reply.includes('OK')) {
-    toast('Clock synced');
+    clearClockWarning();
+    toast('Clock synced — reminders will now fire at the right time');
     await refreshStatus();
   } else {
-    toast('Couldn\'t set the clock');
+    toast('Couldn\'t set the clock. Try unplugging the bracelet and reconnecting.');
   }
 }
 
@@ -995,6 +1086,15 @@ function validate() {
 async function saveAll() {
   const problem = validate();
   if (problem) { toast(problem); return; }
+
+  // Saving reminders onto a bracelet whose clock is wrong produces a
+  // device that looks fine and fires at the wrong time. Say so first.
+  if ($('clockWarn').classList.contains('urgent')) {
+    if (!confirm('Your bracelet\'s clock is not right, so these reminders ' +
+                 'will not go off when you expect.\n\nSave anyway?')) {
+      return;
+    }
+  }
 
   $('saveBtn').disabled = true;
   $('saveBtn').textContent = 'Saving…';
