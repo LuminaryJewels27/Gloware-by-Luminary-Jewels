@@ -371,23 +371,26 @@ const BAUD = 115200;
    ------------------------------------------------------------------ */
 const PRESET_COLOURS = [
   { hex: '#ff0000', name: 'Red'     },
-  { hex: '#ff5000', name: 'Orange'  },
-  { hex: '#ffc800', name: 'Amber'   },
-  { hex: '#a0ff00', name: 'Lime'    },
+  { hex: '#ffaa00', name: 'Amber'   },
+  { hex: '#aaff00', name: 'Lime'    },
   { hex: '#00ff00', name: 'Green'   },
-  { hex: '#00ff96', name: 'Mint'    },
-  { hex: '#00c8ff', name: 'Cyan'    },
-  { hex: '#003cff', name: 'Blue'    },
-  { hex: '#8c00ff', name: 'Violet'  },
-  { hex: '#ff0096', name: 'Magenta' },
+  { hex: '#00ffaa', name: 'Mint'    },
+  { hex: '#00aaff', name: 'Cyan'    },
+  { hex: '#0000ff', name: 'Blue'    },
+  { hex: '#aa00ff', name: 'Violet'  },
+  { hex: '#ff00aa', name: 'Magenta' },
 ];
 
 function colourName(hex) {
+  // Defensive: a reminder restored from an older version of this page
+  // could carry a palette index rather than a colour string.
+  if (typeof hex !== 'string' || !hex.startsWith('#')) return 'Custom';
   const found = PRESET_COLOURS.find(c => c.hex.toLowerCase() === hex.toLowerCase());
   return found ? found.name : 'Custom';
 }
 
 function hexToRgb(hex) {
+  if (typeof hex !== 'string' || !hex.startsWith('#')) return [255, 0, 0];
   const v = parseInt(hex.slice(1), 16);
   return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
 }
@@ -401,6 +404,7 @@ function rgbToHex(r, g, b) {
 // resin face it disappears altogether. Worth telling the customer rather
 // than letting them wonder why their reminder seems not to fire.
 function isTooDark(hex) {
+  if (typeof hex !== 'string' || !hex.startsWith('#')) return false;
   const [r, g, b] = hexToRgb(hex);
   return Math.max(r, g, b) < 60;
 }
@@ -463,7 +467,7 @@ let nextId = 1;
 const LABEL_KEY = 'lj_labels_v1';
 
 function labelKeyFor(r) {
-  return r.time + '|' + r.colour;
+  return r.time + '|' + String(r.colour);
 }
 
 function loadLabels() {
@@ -804,19 +808,20 @@ function render() {
       </div>
 
       <div class="palette" data-palette="${r.id}">
-        ${PRESET_COLOURS.map(hex => `
-          <button data-act="colour" data-id="${r.id}" data-colour="${hex}"
-                  class="${hex.toLowerCase() === r.colour.toLowerCase() ? 'sel' : ''}"
-                  style="background:${hex}" title="${hex}"></button>`).join('')}
+        ${PRESET_COLOURS.map(c => `
+          <button data-act="colour" data-id="${r.id}" data-colour="${c.hex}"
+                  class="${c.hex.toLowerCase() === String(r.colour).toLowerCase() ? 'sel' : ''}"
+                  style="background:${c.hex}" title="${c.name}"></button>`).join('')}
 
-        <label class="picker-wrap" title="Any colour you like">
+        <label class="picker-wrap" title="Custom colour — may be harder to tell apart">
           <input type="color" data-act="colourPick" data-id="${r.id}"
                  value="${r.colour}">
-
         </label>
 
-        <span class="hexcode">${r.colour.toUpperCase()}</span>
-        ${isTooDark(r.colour) ? '<span class="dark-warn">Very dark \u2014 may be hard to see through the face</span>' : ''}
+        <span class="hexcode">${colourName(r.colour)}</span>
+        ${colourName(r.colour) === 'Custom'
+          ? '<span class="dark-warn">Custom colours can be harder to tell apart on the wrist. The ten above are chosen to stay distinct.</span>'
+          : ''}
       </div>
 
       <div class="field-grid">
