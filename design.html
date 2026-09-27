@@ -203,6 +203,24 @@
                 margin-top:2px; }
 
   /* Running list of picks, so they stay visible across category switches. */
+  .next-steps { background:var(--bg-input); border-radius:10px;
+                padding:18px 20px 16px; margin-top:22px; }
+  .next-title { font-size:11px; letter-spacing:.13em; text-transform:uppercase;
+                color:var(--gold-dim); margin-bottom:12px; }
+  .next-steps ol { margin:0 0 0 18px; padding:0; font-size:13.5px;
+                   color:var(--muted); line-height:1.7; }
+  .next-steps li { margin-bottom:7px; }
+  .next-steps strong { color:var(--text); font-weight:500; }
+  .next-note { font-size:12.5px; color:var(--muted); margin-top:12px;
+               padding-top:12px; border-top:1px solid var(--line);
+               line-height:1.6; }
+
+  #photoRights ul { margin:10px 0 12px 18px; padding:0; }
+  #photoRights li { margin-bottom:6px; }
+  #photoRights p { margin-top:10px; }
+  .callout-foot { font-size:12.5px; opacity:.85; padding-top:10px;
+                  border-top:1px solid var(--line); }
+
   .field-label { display:block; font-size:13px; color:var(--muted);
                  margin:18px 0 7px; }
   .field-help { font-size:12px; color:var(--muted); margin-top:7px;
@@ -421,7 +439,8 @@
         <small>
           A pet, a place, a person. Your photo is printed and laminated before it
           goes into the resin — the lamination is what stops it yellowing or
-          bleeding, and it's why this one is $1.
+          bleeding, and it's why this one is $1. It prints about the size of a
+          thumbprint, so a sharp close-up works far better than a group shot.
         </small>
       </div>
       <!-- A real file input, hidden, driven by the label. On a phone this is
@@ -443,16 +462,33 @@
       </div>
     </div>
 
-    <p class="callout" id="photoRights" style="display:none">
-      Your photo stays on your own device — the page reads it to show you the
-      preview and nothing is uploaded anywhere. After you order we'll reply
-      asking you to send the original, which is the copy we print from.
-      <br><br>
-      Please only send photos you took or have permission to use. We can't print
-      copyrighted images — characters, album art, professional portraits — and a
-      photographer usually holds the rights to a portrait even when you're the
-      one in it.
-    </p>
+    <div class="callout" id="photoRights" style="display:none">
+      <strong>What makes a photo print well</strong>
+      <ul>
+        <li><strong>Sharp and well lit.</strong> It prints at about the size of
+          a thumbprint, so anything blurry or dim gets worse, not better. A
+          photo taken outdoors or by a window beats one taken at night.</li>
+        <li><strong>One clear subject, close up.</strong> A face, a pet, one
+          flower. A group shot at this size becomes unrecognisable.</li>
+        <li><strong>JPEG or PNG.</strong> If it came off an iPhone it may be a
+          HEIC file, which we can’t print — the page will tell you if so.</li>
+        <li><strong>The original, not a screenshot.</strong> Screenshots and
+          photos saved from social media lose most of their detail.</li>
+      </ul>
+      <p>
+        <strong>Only send photos you took or have permission to use.</strong>
+        We can’t print copyrighted images — cartoon and film characters,
+        sports logos, album art, or professional portraits. A photographer
+        usually holds the rights to a portrait even when you are the person
+        in it. If we can’t print what you send we’ll say so and refund the
+        photo charge.
+      </p>
+      <p class="callout-foot">
+        Your photo stays on your own device — this page reads it to show you
+        the preview and nothing is uploaded. We’ll email you after your order
+        asking you to send the original, which is the copy we print from.
+      </p>
+    </div>
 
     <textarea id="notes" rows="2"
       placeholder="Anything else we should know? An occasion, a color leaning, a name to spell right…"></textarea>
@@ -465,6 +501,26 @@
       to send it. Nothing else — no list, no newsletter.
     </p>
     <p class="order-msg" id="orderMsg"></p>
+
+    <!-- Someone submitting this needs to know whether they have just been
+         charged. They have not, and saying so plainly is the point. -->
+    <div class="next-steps">
+      <div class="next-title">What happens after you order</div>
+      <ol>
+        <li><strong>We email you within a day</strong> to confirm the design
+            and the price, and to ask any questions about it.</li>
+        <li><strong>We send an invoice</strong> you can pay by card from your
+            phone. Nothing is charged until you choose to pay it.</li>
+        <li><strong>We make it</strong> once the invoice is paid — usually
+            7 to 10 days, since every face is poured by hand.</li>
+        <li><strong>It ships</strong> from Rochester, with setup instructions
+            in the box.</li>
+      </ol>
+      <p class="next-note">
+        Sending this form doesn’t charge you anything and doesn’t commit
+        you to buying. It starts a conversation.
+      </p>
+    </div>
   </section>
 
   </div><!-- /.steps -->
@@ -490,7 +546,8 @@
   <p class="footnote">
     Every face is poured by hand, so yours will be close to the examples but never
     identical — that's rather the point.<br>
-    Face size is about 22 × 33mm. Made to order, usually shipped in 7–10 days.<br>
+    Face size is about 22 × 33mm. Made to order, usually shipped 7–10 days after
+    the invoice is paid.<br>
     Setup needs a computer or Android phone with Chrome or Edge. Charges with any
     USB-C cable.
   </p>
@@ -530,7 +587,20 @@
    customer's email app with the spec filled in, which is what it did
    before. The difference is that a posted order can't be abandoned
    halfway by a phone with no mail app set up. */
-const FORM_KEY = '';                       // <-- paste the access key here
+const FORM_KEY = '6a493fc0-9e4e-4e39-a275-f89d38b9dbdd';   // Web3Forms access key
+
+/* Card payment on the page. Empty until the checkout worker is deployed —
+   see checkout/checkout-worker.js, which has the setup steps. Paste the
+   worker's …workers.dev address between the quotes and the Reserve button
+   takes customers straight to a Stripe card page.
+
+   While it is empty the order is emailed to you exactly as it is now and
+   you invoice as normal, so the site works either way.
+
+   PRICE_VERSION must match the number in the worker. Bump both together
+   whenever a price changes. */
+const CHECKOUT_URL  = '';
+const PRICE_VERSION = 1;
 const FORM_URL = 'https://api.web3forms.com/submit';
 const CONTACT  = 'luminaryjewels27@gmail.com';
 
@@ -585,17 +655,17 @@ const MAX_STRANDS = { spring:1, nato:1, wrap:4 };
 const FASTENINGS = [
   /* `short` is the form used mid-sentence in the summary — "NATO" must
      keep its capitals, so lowercasing `name` there won't do. */
-  { id:'spring', name:'Spring bar', short:'spring bar',
+  { id:'spring', active:false, name:'Spring bar', short:'spring bar',
     desc:'The strap clips to each side of the setting on standard 20mm ' +
          'spring bars. Quickest to change, and any 20mm watch strap you ' +
          'already own will fit.',
     hint:'Spring-bar straps sit flush against the wrist on either side of the face.' },
-  { id:'nato', name:'NATO pass-through', short:'NATO',
+  { id:'nato', active:false, name:'NATO pass-through', short:'NATO',
     desc:'One continuous strap that threads underneath the setting. The ' +
          'face can slide along it, and the strap keeps hold even if one ' +
          'spring bar ever gives way.',
     hint:'NATO straps pass under the face, so the bracelet sits a couple of millimetres higher on the wrist — and the strap shows on both sides of the setting.' },
-  { id:'wrap', name:'Wrap', short:'wrap',
+  { id:'wrap', active:false, name:'Wrap', short:'wrap',
     desc:'A longer cord or strap that threads under the setting and winds ' +
          'around the wrist two or three times. The most jewellery-like of ' +
          'the three.',
@@ -604,104 +674,104 @@ const FASTENINGS = [
 
 const BANDS = [
   /* ---- Spring bar ---- */
-  { id:'sb-blk-sil',  fasten:'spring', group:'Silicone',
+  { id:'sb-blk-sil', active:true,  fasten:'spring', group:'Silicone',
     name:'Black silicone',  meta:'Soft, sporty, waterproof', img:'', add:0, hex:'#1f1f24' },
-  { id:'sb-cre-sil',  fasten:'spring', group:'Silicone',
+  { id:'sb-cre-sil', active:false,  fasten:'spring', group:'Silicone',
     name:'Cream silicone',  meta:'Soft, everyday',           img:'', add:0, hex:'#e8e0d4' },
-  { id:'sb-tan-lea',  fasten:'spring', group:'Leather',
+  { id:'sb-tan-lea', active:true,  fasten:'spring', group:'Leather',
     name:'Tan leather',     meta:'Warm, classic',            img:'', add:5, hex:'#b8834a' },
-  { id:'sb-blk-lea',  fasten:'spring', group:'Leather',
+  { id:'sb-blk-lea', active:true,  fasten:'spring', group:'Leather',
     name:'Black leather',   meta:'Sharp, dressy',            img:'', add:5, hex:'#2a2429' },
-  { id:'sb-brn-lea',  fasten:'spring', group:'Leather',
+  { id:'sb-brn-lea', active:false,  fasten:'spring', group:'Leather',
     name:'Brown leather',   meta:'Soft, worn-in look',       img:'', add:5, hex:'#6b4530' },
-  { id:'sb-gld-mesh', fasten:'spring', group:'Metal mesh',
+  { id:'sb-gld-mesh', active:true, fasten:'spring', group:'Metal mesh',
     name:'Gold mesh',       meta:'Jewellery-first',          img:'', add:8, hex:'#d4af6a' },
-  { id:'sb-sil-mesh', fasten:'spring', group:'Metal mesh',
+  { id:'sb-sil-mesh', active:false, fasten:'spring', group:'Metal mesh',
     name:'Silver mesh',     meta:'Jewellery-first',          img:'', add:8, hex:'#c9ccd4' },
 
   /* ---- NATO: eight nylon, two leather ---- */
-  { id:'na-black',   fasten:'nato', group:'Nylon NATO',
+  { id:'na-black', active:true,   fasten:'nato', group:'Nylon NATO',
     name:'Black',          meta:'Goes with everything',      img:'', add:0, hex:'#23232a' },
-  { id:'na-navy',    fasten:'nato', group:'Nylon NATO',
+  { id:'na-navy', active:true,    fasten:'nato', group:'Nylon NATO',
     name:'Navy',           meta:'Deep, easy blue',           img:'', add:0, hex:'#22345e' },
-  { id:'na-charcoal',fasten:'nato', group:'Nylon NATO',
+  { id:'na-charcoal', active:false,fasten:'nato', group:'Nylon NATO',
     name:'Charcoal',       meta:'Soft grey',                 img:'', add:0, hex:'#444a55' },
-  { id:'na-stripe',  fasten:'nato', group:'Nylon NATO',
+  { id:'na-stripe', active:false,  fasten:'nato', group:'Nylon NATO',
     name:'Grey stripe',    meta:'Classic striped weave',     img:'', add:0, hex:'#6e7480' },
-  { id:'na-olive',   fasten:'nato', group:'Nylon NATO',
+  { id:'na-olive', active:false,   fasten:'nato', group:'Nylon NATO',
     name:'Olive',          meta:'Muted green',               img:'', add:0, hex:'#5f6b42' },
-  { id:'na-burg',    fasten:'nato', group:'Nylon NATO',
+  { id:'na-burg', active:false,    fasten:'nato', group:'Nylon NATO',
     name:'Burgundy',       meta:'Deep wine red',             img:'', add:0, hex:'#6e2230' },
-  { id:'na-cream',   fasten:'nato', group:'Nylon NATO',
+  { id:'na-cream', active:false,   fasten:'nato', group:'Nylon NATO',
     name:'Cream',          meta:'Pale and summery',          img:'', add:0, hex:'#e2d8c6' },
-  { id:'na-rose',    fasten:'nato', group:'Nylon NATO',
+  { id:'na-rose', active:true,    fasten:'nato', group:'Nylon NATO',
     name:'Dusty rose',     meta:'Soft muted pink',           img:'', add:0, hex:'#c08a8e' },
-  { id:'na-lea-tan', fasten:'nato', group:'Leather NATO',
+  { id:'na-lea-tan', active:true, fasten:'nato', group:'Leather NATO',
     name:'Tan leather',    meta:'Dressier than nylon',       img:'', add:5, hex:'#b8834a' },
-  { id:'na-lea-blk', fasten:'nato', group:'Leather NATO',
+  { id:'na-lea-blk', active:false, fasten:'nato', group:'Leather NATO',
     name:'Black leather',  meta:'Dressier than nylon',       img:'', add:5, hex:'#2a2429' },
 
   /* ---- Wrap: leather, then ornamental ---- */
-  { id:'wr-brd-tan', fasten:'wrap', group:'Leather wrap',
+  { id:'wr-brd-tan', active:true, fasten:'wrap', group:'Leather wrap',
     name:'Braided tan',    meta:'Three-strand braid',        img:'', add:2, hex:'#b8834a' },
-  { id:'wr-brd-brn', fasten:'wrap', group:'Leather wrap',
+  { id:'wr-brd-brn', active:false, fasten:'wrap', group:'Leather wrap',
     name:'Braided brown',  meta:'Three-strand braid',        img:'', add:2, hex:'#6b4530' },
-  { id:'wr-brd-blk', fasten:'wrap', group:'Leather wrap',
+  { id:'wr-brd-blk', active:true, fasten:'wrap', group:'Leather wrap',
     name:'Braided black',  meta:'Three-strand braid',        img:'', add:2, hex:'#2a2429' },
-  { id:'wr-flat-tan',fasten:'wrap', group:'Leather wrap',
+  { id:'wr-flat-tan', active:false,fasten:'wrap', group:'Leather wrap',
     name:'Flat tan',       meta:'Single smooth strap',       img:'', add:2, hex:'#c08e57' },
-  { id:'wr-suede',   fasten:'wrap', group:'Leather wrap',
+  { id:'wr-suede', active:false,   fasten:'wrap', group:'Leather wrap',
     name:'Grey suede',     meta:'Soft matte finish',         img:'', add:2, hex:'#7d7a80' },
-  { id:'wr-pearl',   fasten:'wrap', group:'Ornamental wrap',
+  { id:'wr-pearl', active:true,   fasten:'wrap', group:'Ornamental wrap',
     name:'Pearl & leather',meta:'Faux pearls on leather',    img:'', add:3, hex:'#e8e0cc' },
-  { id:'wr-bead',    fasten:'wrap', group:'Ornamental wrap',
+  { id:'wr-bead', active:false,    fasten:'wrap', group:'Ornamental wrap',
     name:'Crystal & leather',meta:'Faceted stones on leather',img:'', add:3, hex:'#9fd0da' },
-  { id:'wr-chain',   fasten:'wrap', group:'Ornamental wrap',
+  { id:'wr-chain', active:false,   fasten:'wrap', group:'Ornamental wrap',
     name:'Chain & leather',meta:'Fine chain beside leather', img:'', add:3, hex:'#8e7a5e' },
-  { id:'wr-velvet',  fasten:'wrap', group:'Ornamental wrap',
+  { id:'wr-velvet', active:false,  fasten:'wrap', group:'Ornamental wrap',
     name:'Velvet ribbon',  meta:'Soft, dressy',              img:'', add:2, hex:'#7a2f52' },
-  { id:'wr-cord',    fasten:'wrap', group:'Ornamental wrap',
+  { id:'wr-cord', active:true,    fasten:'wrap', group:'Ornamental wrap',
     name:'Waxed cord',     meta:'Fine, minimal',             img:'', add:0, hex:'#4a3a2e' },
 ];
 
 const METALS = [
-  { id:'m-gold', name:'Gold',        meta:'Warm, classic',       img:'', hex:'#d4af6a' },
-  { id:'m-rose', name:'Rose gold',   meta:'Soft, pink-toned',    img:'', hex:'#dba08f' },
-  { id:'m-silv', name:'Silver',      meta:'Bright, neutral',     img:'', hex:'#c9ccd4' },
-  { id:'m-blk',  name:'Matte black', meta:'Modern, understated', img:'', hex:'#3a3440' },
+  { id:'m-gold', active:true, name:'Gold',        meta:'Warm, classic',       img:'', hex:'#d4af6a' },
+  { id:'m-rose', active:false, name:'Rose gold',   meta:'Soft, pink-toned',    img:'', hex:'#dba08f' },
+  { id:'m-silv', active:true, name:'Silver',      meta:'Bright, neutral',     img:'', hex:'#c9ccd4' },
+  { id:'m-blk', active:true,  name:'Matte black', meta:'Modern, understated', img:'', hex:'#3a3440' },
 ];
 
 /* `light` says how much reminder light gets through:
    high = colors stay true, mid = slightly tinted, low = strongly tinted. */
 const MICA = [
-  { id:'k-clear',   name:'Clear',        meta:'No background at all', light:'high', img:'', hex:'', sheen:true },
-  { id:'k-pearl',   name:'Pearl white',  meta:'Soft milky shimmer',   light:'high', img:'', hex:'#f2ece2', sheen:true },
-  { id:'k-champ',   name:'Champagne',    meta:'Warm pale gold',       light:'high', img:'', hex:'#e8d9b8', sheen:true },
-  { id:'k-blush',   name:'Blush',        meta:'Pale pink shimmer',    light:'high', img:'', hex:'#f0cfd2', sheen:true },
-  { id:'k-lav',     name:'Lavender',     meta:'Pale purple shimmer',  light:'high', img:'', hex:'#d8ccec', sheen:true },
-  { id:'k-sky',     name:'Sky',          meta:'Pale blue shimmer',    light:'mid',  img:'', hex:'#c6dcee', sheen:true },
-  { id:'k-mint',    name:'Mint',         meta:'Pale green shimmer',   light:'mid',  img:'', hex:'#c6e4d2', sheen:true },
-  { id:'k-gold',    name:'Antique gold', meta:'Deep metallic gold',   light:'mid',  img:'', hex:'#b8934a', sheen:true },
-  { id:'k-copper',  name:'Copper',       meta:'Warm metallic',        light:'mid',  img:'', hex:'#b57a52', sheen:true },
-  { id:'k-silver',  name:'Silver',       meta:'Cool metallic',        light:'mid',  img:'', hex:'#c2c6cf', sheen:true },
-  { id:'k-teal',    name:'Deep teal',    meta:'Rich blue-green',      light:'low',  img:'', hex:'#1f6b6e', sheen:true },
-  { id:'k-plum',    name:'Plum',         meta:'Deep purple',          light:'low',  img:'', hex:'#5c3560', sheen:true },
-  { id:'k-midnight',name:'Midnight',     meta:'Near-black shimmer',   light:'low',  img:'', hex:'#2a2434', sheen:true },
+  { id:'k-clear', active:true,   name:'Clear',        meta:'No background at all', light:'high', img:'', hex:'', sheen:true },
+  { id:'k-pearl', active:true,   name:'Pearl white',  meta:'Soft milky shimmer',   light:'high', img:'', hex:'#f2ece2', sheen:true },
+  { id:'k-champ', active:true,   name:'Champagne',    meta:'Warm pale gold',       light:'high', img:'', hex:'#e8d9b8', sheen:true },
+  { id:'k-blush', active:true,   name:'Blush',        meta:'Pale pink shimmer',    light:'high', img:'', hex:'#f0cfd2', sheen:true },
+  { id:'k-lav', active:false,     name:'Lavender',     meta:'Pale purple shimmer',  light:'high', img:'', hex:'#d8ccec', sheen:true },
+  { id:'k-sky', active:false,     name:'Sky',          meta:'Pale blue shimmer',    light:'mid',  img:'', hex:'#c6dcee', sheen:true },
+  { id:'k-mint', active:false,    name:'Mint',         meta:'Pale green shimmer',   light:'mid',  img:'', hex:'#c6e4d2', sheen:true },
+  { id:'k-gold', active:true,    name:'Antique gold', meta:'Deep metallic gold',   light:'mid',  img:'', hex:'#b8934a', sheen:true },
+  { id:'k-copper', active:false,  name:'Copper',       meta:'Warm metallic',        light:'mid',  img:'', hex:'#b57a52', sheen:true },
+  { id:'k-silver', active:false,  name:'Silver',       meta:'Cool metallic',        light:'mid',  img:'', hex:'#c2c6cf', sheen:true },
+  { id:'k-teal', active:false,    name:'Deep teal',    meta:'Rich blue-green',      light:'low',  img:'', hex:'#1f6b6e', sheen:true },
+  { id:'k-plum', active:false,    name:'Plum',         meta:'Deep purple',          light:'low',  img:'', hex:'#5c3560', sheen:true },
+  { id:'k-midnight', active:true,name:'Midnight',     meta:'Near-black shimmer',   light:'low',  img:'', hex:'#2a2434', sheen:true },
 ];
 
 const INKS = [
-  { id:'i-blush',   name:'Blush pink',  meta:'Soft and translucent', light:'high', img:'', hex:'#f0b8c4', sheen:false },
-  { id:'i-butter',  name:'Buttercup',   meta:'Pale sunny yellow',    light:'high', img:'', hex:'#f2e08a', sheen:false },
-  { id:'i-seafoam', name:'Seafoam',     meta:'Pale blue-green',      light:'high', img:'', hex:'#a8dcd0', sheen:false },
-  { id:'i-lilac',   name:'Lilac',       meta:'Pale violet',          light:'high', img:'', hex:'#cdb8e8', sheen:false },
-  { id:'i-coral',   name:'Coral',       meta:'Warm orange-pink',     light:'mid',  img:'', hex:'#f0906e', sheen:false },
-  { id:'i-ocean',   name:'Ocean blue',  meta:'Clear mid blue',       light:'mid',  img:'', hex:'#3f8fd0', sheen:false },
-  { id:'i-emerald', name:'Emerald',     meta:'Clear green',          light:'mid',  img:'', hex:'#2f9f70', sheen:false },
-  { id:'i-amber',   name:'Amber',       meta:'Warm honey',           light:'mid',  img:'', hex:'#d99430', sheen:false },
-  { id:'i-sapph',   name:'Sapphire',    meta:'Deep saturated blue',  light:'low',  img:'', hex:'#24459e', sheen:false },
-  { id:'i-ruby',    name:'Ruby',        meta:'Deep saturated red',   light:'low',  img:'', hex:'#a8203a', sheen:false },
-  { id:'i-violet',  name:'Deep violet', meta:'Rich purple',          light:'low',  img:'', hex:'#5a2a8e', sheen:false },
-  { id:'i-ink',     name:'Inkwell',     meta:'Darkest blue-black',   light:'low',  img:'', hex:'#161a2e', sheen:false },
+  { id:'i-blush', active:true,   name:'Blush pink',  meta:'Soft and translucent', light:'high', img:'', hex:'#f0b8c4', sheen:false },
+  { id:'i-butter', active:false,  name:'Buttercup',   meta:'Pale sunny yellow',    light:'high', img:'', hex:'#f2e08a', sheen:false },
+  { id:'i-seafoam', active:true, name:'Seafoam',     meta:'Pale blue-green',      light:'high', img:'', hex:'#a8dcd0', sheen:false },
+  { id:'i-lilac', active:false,   name:'Lilac',       meta:'Pale violet',          light:'high', img:'', hex:'#cdb8e8', sheen:false },
+  { id:'i-coral', active:false,   name:'Coral',       meta:'Warm orange-pink',     light:'mid',  img:'', hex:'#f0906e', sheen:false },
+  { id:'i-ocean', active:true,   name:'Ocean blue',  meta:'Clear mid blue',       light:'mid',  img:'', hex:'#3f8fd0', sheen:false },
+  { id:'i-emerald', active:false, name:'Emerald',     meta:'Clear green',          light:'mid',  img:'', hex:'#2f9f70', sheen:false },
+  { id:'i-amber', active:true,   name:'Amber',       meta:'Warm honey',           light:'mid',  img:'', hex:'#d99430', sheen:false },
+  { id:'i-sapph', active:false,   name:'Sapphire',    meta:'Deep saturated blue',  light:'low',  img:'', hex:'#24459e', sheen:false },
+  { id:'i-ruby', active:true,    name:'Ruby',        meta:'Deep saturated red',   light:'low',  img:'', hex:'#a8203a', sheen:false },
+  { id:'i-violet', active:false,  name:'Deep violet', meta:'Rich purple',          light:'low',  img:'', hex:'#5a2a8e', sheen:false },
+  { id:'i-ink', active:true,     name:'Inkwell',     meta:'Darkest blue-black',   light:'low',  img:'', hex:'#161a2e', sheen:false },
 ];
 
 /* ------------------------------------------------------------------
@@ -723,6 +793,28 @@ const INKS = [
    images/inclusions/g-gold.jpg. Anything missing quietly falls back to
    the colored placeholder, so you can add them a few at a time.
    ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------
+   WHAT IS ON SALE
+
+   Every option carries active:true or active:false. Only the active ones
+   appear on the page — nothing is deleted, so turning one back on is a
+   one-word change when you stock it.
+
+   The founding run is deliberately narrow: 12 bands, 3 metals, 12
+   backgrounds and 37 elements. You cannot hold four of every strand and
+   99 elements for 30 bracelets, and an option nobody can actually get is
+   worse than one that was never offered.
+
+   Off-season holidays are switched off rather than removed. Turn
+   Valentine's on in January, Spring in March.
+
+   Set SHOW_EVERYTHING to true to see the full catalogue while you plan.
+   Leave it false on the live site.
+   ------------------------------------------------------------------ */
+const SHOW_EVERYTHING = false;
+
+function isActive(o) { return SHOW_EVERYTHING || o.active !== false; }
+
 const AUTO_IMAGES = false;
 
 /* One folder per kind of option. A photo is found by its id, so the gold
@@ -765,150 +857,150 @@ function photoTag(kind, o) {
 const INCLUSIONS = [
   /* ---------- Materials: relevant to every theme ---------- */
   { group:'Glitter & shimmer', kind:'material', shape:'sparkle', density:'fine', items:[
-    { id:'g-gold', name:'Gold glitter',        swatch:'#d4af6a' },
-    { id:'g-silv', name:'Silver glitter',      swatch:'#c9ccd4' },
-    { id:'g-rose', name:'Rose gold glitter',   swatch:'#e0a899' },
-    { id:'g-holo', name:'Holographic glitter', swatch:'#9be8e0' },
-    { id:'g-chnk', name:'Chunky glitter',      swatch:'#e8c4f0' },
-    { id:'g-iri',  name:'Iridescent flakes',   swatch:'#cfe8f0' },
+    { id:'g-gold', active:true, name:'Gold glitter',        swatch:'#d4af6a' },
+    { id:'g-silv', active:true, name:'Silver glitter',      swatch:'#c9ccd4' },
+    { id:'g-rose', active:false, name:'Rose gold glitter',   swatch:'#e0a899' },
+    { id:'g-holo', active:true, name:'Holographic glitter', swatch:'#9be8e0' },
+    { id:'g-chnk', active:false, name:'Chunky glitter',      swatch:'#e8c4f0' },
+    { id:'g-iri', active:true,  name:'Iridescent flakes',   swatch:'#cfe8f0' },
   ]},
   { group:'Dried botanicals', kind:'material', shape:'leaf', density:'mid', items:[
-    { id:'b-lav',   name:'Lavender buds',    swatch:'#9b8bc4' },
-    { id:'b-baby',  name:"Baby's breath",    swatch:'#f5f1e8' },
-    { id:'b-rose',  name:'Rose petals',      swatch:'#c4667a' },
-    { id:'b-daisy', name:'Pressed daisies',  swatch:'#f7f3d8' },
-    { id:'b-fern',  name:'Tiny fern fronds', swatch:'#7a9b6a' },
-    { id:'b-corn',  name:'Cornflower blue',  swatch:'#6a85c4' },
-    { id:'b-euc',   name:'Eucalyptus leaf',  swatch:'#8fae9b' },
+    { id:'b-lav', active:true,   name:'Lavender buds',    swatch:'#9b8bc4' },
+    { id:'b-baby', active:true,  name:"Baby's breath",    swatch:'#f5f1e8' },
+    { id:'b-rose', active:true,  name:'Rose petals',      swatch:'#c4667a' },
+    { id:'b-daisy', active:true, name:'Pressed daisies',  swatch:'#f7f3d8' },
+    { id:'b-fern', active:false,  name:'Tiny fern fronds', swatch:'#7a9b6a' },
+    { id:'b-corn', active:false,  name:'Cornflower blue',  swatch:'#6a85c4' },
+    { id:'b-euc', active:false,   name:'Eucalyptus leaf',  swatch:'#8fae9b' },
   ]},
   { group:'Foils & metallics', kind:'material', shape:'flake', density:'fine', items:[
-    { id:'f-gold', name:'Gold leaf',      swatch:'#e0c060' },
-    { id:'f-silv', name:'Silver leaf',    swatch:'#d8dae0' },
-    { id:'f-bron', name:'Bronze leaf',    swatch:'#b07a42' },
-    { id:'f-red',  name:'Red foil',       swatch:'#d04545' },
-    { id:'f-green',name:'Green foil',     swatch:'#3fa060' },
-    { id:'f-blue', name:'Blue foil',      swatch:'#4a8ad8' },
-    { id:'f-dblue',name:'Deep blue foil', swatch:'#2a4a9a' },
-    { id:'f-pink', name:'Hot pink foil',  swatch:'#e84a9a' },
+    { id:'f-gold', active:true, name:'Gold leaf',      swatch:'#e0c060' },
+    { id:'f-silv', active:true, name:'Silver leaf',    swatch:'#d8dae0' },
+    { id:'f-bron', active:false, name:'Bronze leaf',    swatch:'#b07a42' },
+    { id:'f-red', active:true,  name:'Red foil',       swatch:'#d04545' },
+    { id:'f-green', active:false,name:'Green foil',     swatch:'#3fa060' },
+    { id:'f-blue', active:true, name:'Blue foil',      swatch:'#4a8ad8' },
+    { id:'f-dblue', active:false,name:'Deep blue foil', swatch:'#2a4a9a' },
+    { id:'f-pink', active:false, name:'Hot pink foil',  swatch:'#e84a9a' },
   ]},
   { group:'Shapes & confetti', kind:'material', shape:'dot', density:'mid', items:[
-    { id:'s-star',   name:'Tiny stars',       swatch:'#f0d878', shape:'star' },
-    { id:'s-heart',  name:'Tiny hearts',      swatch:'#e07a94', shape:'heart' },
-    { id:'s-moon',   name:'Moons',            swatch:'#d8d4e8' },
-    { id:'s-shell',  name:'Crushed seashell', swatch:'#f0e0d0' },
-    { id:'s-opal',   name:'Opal chips',       swatch:'#aee8dd', shape:'flake' },
-    { id:'s-butter', name:'Butterflies',      swatch:'#f0a8d0', shape:'petal' },
+    { id:'s-star', active:true,   name:'Tiny stars',       swatch:'#f0d878', shape:'star' },
+    { id:'s-heart', active:true,  name:'Tiny hearts',      swatch:'#e07a94', shape:'heart' },
+    { id:'s-moon', active:true,   name:'Moons',            swatch:'#d8d4e8' },
+    { id:'s-shell', active:false,  name:'Crushed seashell', swatch:'#f0e0d0' },
+    { id:'s-opal', active:true,   name:'Opal chips',       swatch:'#aee8dd', shape:'flake' },
+    { id:'s-butter', active:false, name:'Butterflies',      swatch:'#f0a8d0', shape:'petal' },
   ]},
 
   /* ---------- Seasons ---------- */
   { group:'Spring', kind:'season', shape:'petal', density:'mid', items:[
-    { id:'sp-blossom', name:'Cherry blossom',   swatch:'#f0b8cc', shape:'petal' },
-    { id:'sp-bud',     name:'Green buds',       swatch:'#a8cc7a' },
-    { id:'sp-bee',     name:'Tiny bees',        swatch:'#e8c050' },
-    { id:'sp-rain',    name:'Raindrop beads',   swatch:'#bcd8e8' },
-    { id:'sp-pastel',  name:'Pastel confetti',  swatch:'#e8d0f0' },
-    { id:'sp-tulip',   name:'Pressed tulip',    swatch:'#e07a8a', shape:'petal' },
+    { id:'sp-blossom', active:false, name:'Cherry blossom',   swatch:'#f0b8cc', shape:'petal' },
+    { id:'sp-bud', active:false,     name:'Green buds',       swatch:'#a8cc7a' },
+    { id:'sp-bee', active:false,     name:'Tiny bees',        swatch:'#e8c050' },
+    { id:'sp-rain', active:false,    name:'Raindrop beads',   swatch:'#bcd8e8' },
+    { id:'sp-pastel', active:false,  name:'Pastel confetti',  swatch:'#e8d0f0' },
+    { id:'sp-tulip', active:false,   name:'Pressed tulip',    swatch:'#e07a8a', shape:'petal' },
   ]},
   { group:'Summer', kind:'season', shape:'dot', density:'mid', items:[
-    { id:'su-sun',    name:'Sunflower petal',  swatch:'#f0c040' },
-    { id:'su-shell',  name:'Tiny seashells',   swatch:'#f0e2d0' },
-    { id:'su-star',   name:'Starfish',         swatch:'#e8a878' },
-    { id:'su-wave',   name:'Aqua glitter',     swatch:'#58c8e8' },
-    { id:'su-palm',   name:'Palm leaf',        swatch:'#4aa878', shape:'leaf' },
-    { id:'su-citrus', name:'Citrus slice',     swatch:'#f09030' },
+    { id:'su-sun', active:false,    name:'Sunflower petal',  swatch:'#f0c040' },
+    { id:'su-shell', active:false,  name:'Tiny seashells',   swatch:'#f0e2d0' },
+    { id:'su-star', active:false,   name:'Starfish',         swatch:'#e8a878' },
+    { id:'su-wave', active:false,   name:'Aqua glitter',     swatch:'#58c8e8' },
+    { id:'su-palm', active:false,   name:'Palm leaf',        swatch:'#4aa878', shape:'leaf' },
+    { id:'su-citrus', active:false, name:'Citrus slice',     swatch:'#f09030' },
   ]},
   { group:'Fall', kind:'season', shape:'leaf', density:'mid', items:[
-    { id:'fa-maple',  name:'Maple leaves',     swatch:'#c4702a', shape:'leaf' },
-    { id:'fa-acorn',  name:'Tiny acorns',      swatch:'#8a6038' },
-    { id:'fa-pump',   name:'Mini pumpkins',    swatch:'#e08030' },
-    { id:'fa-amber',  name:'Amber glitter',    swatch:'#d09840' },
-    { id:'fa-wheat',  name:'Wheat sprig',      swatch:'#d8b870', shape:'leaf' },
-    { id:'fa-berry',  name:'Red berries',      swatch:'#b03a3a' },
+    { id:'fa-maple', active:true,  name:'Maple leaves',     swatch:'#c4702a', shape:'leaf' },
+    { id:'fa-acorn', active:true,  name:'Tiny acorns',      swatch:'#8a6038' },
+    { id:'fa-pump', active:true,   name:'Mini pumpkins',    swatch:'#e08030' },
+    { id:'fa-amber', active:true,  name:'Amber glitter',    swatch:'#d09840' },
+    { id:'fa-wheat', active:false,  name:'Wheat sprig',      swatch:'#d8b870', shape:'leaf' },
+    { id:'fa-berry', active:false,  name:'Red berries',      swatch:'#b03a3a' },
   ]},
   { group:'Winter', kind:'season', shape:'sparkle', density:'mid', items:[
-    { id:'wi-flake',  name:'Snowflakes',       swatch:'#d8ecf8', shape:'sparkle' },
-    { id:'wi-snow',   name:'Snowman',          swatch:'#f0f4f8' },
-    { id:'wi-branch', name:'Frosted branch',   swatch:'#b8ccd8', shape:'leaf' },
-    { id:'wi-ice',    name:'Iridescent ice',   swatch:'#cfe8f0' },
-    { id:'wi-white',  name:'White glitter',    swatch:'#f4f6fa' },
-    { id:'wi-mitten', name:'Tiny mittens',     swatch:'#d05868' },
+    { id:'wi-flake', active:true,  name:'Snowflakes',       swatch:'#d8ecf8', shape:'sparkle' },
+    { id:'wi-snow', active:true,   name:'Snowman',          swatch:'#f0f4f8' },
+    { id:'wi-branch', active:false, name:'Frosted branch',   swatch:'#b8ccd8', shape:'leaf' },
+    { id:'wi-ice', active:true,    name:'Iridescent ice',   swatch:'#cfe8f0' },
+    { id:'wi-white', active:true,  name:'White glitter',    swatch:'#f4f6fa' },
+    { id:'wi-mitten', active:false, name:'Tiny mittens',     swatch:'#d05868' },
   ]},
 
   /* ---------- Holidays ---------- */
   { group:'Christmas', kind:'holiday', shape:'dot', density:'few', items:[
-    { id:'xm-tree',   name:'Christmas trees',  swatch:'#2f7a4a', shape:'tri' },
-    { id:'xm-light',  name:'String lights',    swatch:'#e8c050' },
-    { id:'xm-holly',  name:'Holly & berries',  swatch:'#c43a3a', shape:'leaf' },
-    { id:'xm-cane',   name:'Candy canes',      swatch:'#e85868' },
-    { id:'xm-star',   name:'Gold star',        swatch:'#e8c860', shape:'star' },
-    { id:'xm-orn',    name:'Tiny ornaments',   swatch:'#c04858' },
-    { id:'xm-glit',   name:'Red & green glitter', swatch:'#4a9a5a' },
+    { id:'xm-tree', active:true,   name:'Christmas trees',  swatch:'#2f7a4a', shape:'tri' },
+    { id:'xm-light', active:true,  name:'String lights',    swatch:'#e8c050' },
+    { id:'xm-holly', active:true,  name:'Holly & berries',  swatch:'#c43a3a', shape:'leaf' },
+    { id:'xm-cane', active:true,   name:'Candy canes',      swatch:'#e85868' },
+    { id:'xm-star', active:true,   name:'Gold star',        swatch:'#e8c860', shape:'star' },
+    { id:'xm-orn', active:false,    name:'Tiny ornaments',   swatch:'#c04858' },
+    { id:'xm-glit', active:false,   name:'Red & green glitter', swatch:'#4a9a5a' },
   ]},
   { group:'Hanukkah', kind:'holiday', shape:'dot', density:'few', items:[
-    { id:'hk-menor',  name:'Menorah',          swatch:'#c8cdd8' },
-    { id:'hk-dreidel',name:'Dreidel',          swatch:'#4a7ad0' },
-    { id:'hk-star',   name:'Star of David',    swatch:'#3a6ac4', shape:'star' },
-    { id:'hk-blue',   name:'Blue & silver glitter', swatch:'#6a9ade' },
-    { id:'hk-candle', name:'Tiny candles',     swatch:'#e8dcc0' },
+    { id:'hk-menor', active:true,  name:'Menorah',          swatch:'#c8cdd8' },
+    { id:'hk-dreidel', active:true,name:'Dreidel',          swatch:'#4a7ad0' },
+    { id:'hk-star', active:true,   name:'Star of David',    swatch:'#3a6ac4', shape:'star' },
+    { id:'hk-blue', active:true,   name:'Blue & silver glitter', swatch:'#6a9ade' },
+    { id:'hk-candle', active:false, name:'Tiny candles',     swatch:'#e8dcc0' },
   ]},
   { group:"New Year's Eve", kind:'holiday', shape:'flake', density:'fine', items:[
-    { id:'ny-conf',   name:'Gold confetti',    swatch:'#e8c860' },
-    { id:'ny-bubble', name:'Champagne bubbles',swatch:'#f0e0a8' },
-    { id:'ny-clock',  name:'Midnight clock',   swatch:'#d8d4e0' },
-    { id:'ny-black',  name:'Black & gold glitter', swatch:'#8a7840' },
-    { id:'ny-burst',  name:'Starburst',        swatch:'#f0d878', shape:'star' },
+    { id:'ny-conf', active:false,   name:'Gold confetti',    swatch:'#e8c860' },
+    { id:'ny-bubble', active:false, name:'Champagne bubbles',swatch:'#f0e0a8' },
+    { id:'ny-clock', active:false,  name:'Midnight clock',   swatch:'#d8d4e0' },
+    { id:'ny-black', active:false,  name:'Black & gold glitter', swatch:'#8a7840' },
+    { id:'ny-burst', active:false,  name:'Starburst',        swatch:'#f0d878', shape:'star' },
   ]},
   { group:"Valentine's Day", kind:'holiday', shape:'heart', density:'mid', items:[
-    { id:'vd-heart',  name:'Red hearts',       swatch:'#e05575' },
-    { id:'vd-pink',   name:'Pink glitter',     swatch:'#f0a0be' },
-    { id:'vd-rose',   name:'Tiny roses',       swatch:'#c4506a', shape:'petal' },
-    { id:'vd-arrow',  name:'Cupid arrows',     swatch:'#d8b8c8' },
-    { id:'vd-candy',  name:'Candy hearts',     swatch:'#f0c0d0' },
+    { id:'vd-heart', active:false,  name:'Red hearts',       swatch:'#e05575' },
+    { id:'vd-pink', active:false,   name:'Pink glitter',     swatch:'#f0a0be' },
+    { id:'vd-rose', active:false,   name:'Tiny roses',       swatch:'#c4506a', shape:'petal' },
+    { id:'vd-arrow', active:false,  name:'Cupid arrows',     swatch:'#d8b8c8' },
+    { id:'vd-candy', active:false,  name:'Candy hearts',     swatch:'#f0c0d0' },
   ]},
   { group:"St Patrick's Day", kind:'holiday', shape:'leaf', density:'mid', items:[
-    { id:'st-clover', name:'Four-leaf clovers',swatch:'#5aa85a', shape:'leaf' },
-    { id:'st-sham',   name:'Shamrocks',        swatch:'#3f8f4f' },
-    { id:'st-coin',   name:'Gold coins',       swatch:'#e0c060' },
-    { id:'st-green',  name:'Green glitter',    swatch:'#4aa860' },
-    { id:'st-rain2',  name:'Rainbow flecks',   swatch:'#9be0c0', shape:'flake' },
+    { id:'st-clover', active:false, name:'Four-leaf clovers',swatch:'#5aa85a', shape:'leaf' },
+    { id:'st-sham', active:false,   name:'Shamrocks',        swatch:'#3f8f4f' },
+    { id:'st-coin', active:false,   name:'Gold coins',       swatch:'#e0c060' },
+    { id:'st-green', active:false,  name:'Green glitter',    swatch:'#4aa860' },
+    { id:'st-rain2', active:false,  name:'Rainbow flecks',   swatch:'#9be0c0', shape:'flake' },
   ]},
   { group:'Easter', kind:'holiday', shape:'dot', density:'few', items:[
-    { id:'ea-egg',    name:'Pastel eggs',      swatch:'#e8c8e0' },
-    { id:'ea-bunny',  name:'Tiny bunnies',     swatch:'#f0e4e8' },
-    { id:'ea-chick',  name:'Spring chicks',    swatch:'#f0d868' },
-    { id:'ea-carrot', name:'Carrots',          swatch:'#e89040' },
-    { id:'ea-conf',   name:'Pastel confetti',  swatch:'#dcd0f0', shape:'flake' },
+    { id:'ea-egg', active:false,    name:'Pastel eggs',      swatch:'#e8c8e0' },
+    { id:'ea-bunny', active:false,  name:'Tiny bunnies',     swatch:'#f0e4e8' },
+    { id:'ea-chick', active:false,  name:'Spring chicks',    swatch:'#f0d868' },
+    { id:'ea-carrot', active:false, name:'Carrots',          swatch:'#e89040' },
+    { id:'ea-conf', active:false,   name:'Pastel confetti',  swatch:'#dcd0f0', shape:'flake' },
   ]},
   { group:'4th of July', kind:'holiday', shape:'star', density:'mid', items:[
-    { id:'jl-star',   name:'Silver stars',     swatch:'#d8dce4', shape:'star' },
-    { id:'jl-flag',   name:'Tiny flags',       swatch:'#4a6ad0' },
-    { id:'jl-work',   name:'Firework bursts',  swatch:'#d04858' },
-    { id:'jl-rwb',    name:'Red, white & blue glitter', swatch:'#c04060' },
-    { id:'jl-spark',  name:'Sparkler flecks',  swatch:'#e8e0c0', shape:'sparkle' },
+    { id:'jl-star', active:false,   name:'Silver stars',     swatch:'#d8dce4', shape:'star' },
+    { id:'jl-flag', active:false,   name:'Tiny flags',       swatch:'#4a6ad0' },
+    { id:'jl-work', active:false,   name:'Firework bursts',  swatch:'#d04858' },
+    { id:'jl-rwb', active:false,    name:'Red, white & blue glitter', swatch:'#c04060' },
+    { id:'jl-spark', active:false,  name:'Sparkler flecks',  swatch:'#e8e0c0', shape:'sparkle' },
   ]},
   { group:'Halloween', kind:'holiday', shape:'dot', density:'few', items:[
-    { id:'hw-pump',   name:'Pumpkins',         swatch:'#e08030' },
-    { id:'hw-bat',    name:'Bats',             swatch:'#40384a' },
-    { id:'hw-ghost',  name:'Ghosts',           swatch:'#e8e8f0' },
-    { id:'hw-web',    name:'Spider webs',      swatch:'#a8a4b4', shape:'sparkle' },
-    { id:'hw-hat',    name:'Witch hats',       swatch:'#5a3a6a' },
-    { id:'hw-glit',   name:'Orange & black glitter', swatch:'#c06820' },
+    { id:'hw-pump', active:true,   name:'Pumpkins',         swatch:'#e08030' },
+    { id:'hw-bat', active:true,    name:'Bats',             swatch:'#40384a' },
+    { id:'hw-ghost', active:true,  name:'Ghosts',           swatch:'#e8e8f0' },
+    { id:'hw-web', active:false,    name:'Spider webs',      swatch:'#a8a4b4', shape:'sparkle' },
+    { id:'hw-hat', active:false,    name:'Witch hats',       swatch:'#5a3a6a' },
+    { id:'hw-glit', active:true,   name:'Orange & black glitter', swatch:'#c06820' },
   ]},
   { group:'Birthday', kind:'holiday', shape:'dot', density:'fine', items:[
-    { id:'bd-sprink', name:'Sprinkles',        swatch:'#f088c0', shape:'flake' },
-    { id:'bd-candle', name:'Tiny candles',     swatch:'#f0c850' },
-    { id:'bd-balloon',name:'Balloons',         swatch:'#e06888' },
-    { id:'bd-conf',   name:'Confetti dots',    swatch:'#a8d8f0', shape:'dot' },
-    { id:'bd-num',    name:'Number charm',     swatch:'#d8c058' },
+    { id:'bd-sprink', active:false, name:'Sprinkles',        swatch:'#f088c0', shape:'flake' },
+    { id:'bd-candle', active:false, name:'Tiny candles',     swatch:'#f0c850' },
+    { id:'bd-balloon', active:false,name:'Balloons',         swatch:'#e06888' },
+    { id:'bd-conf', active:false,   name:'Confetti dots',    swatch:'#a8d8f0', shape:'dot' },
+    { id:'bd-num', active:false,    name:'Number charm',     swatch:'#d8c058' },
   ]},
 ];
 
 /* Filter bar groupings — the order the pills appear in. */
 const INCLUSION_KINDS = [
-  { id:'all',      label:'Everything' },
-  { id:'material', label:'Glitter & materials' },
-  { id:'season',   label:'Seasons' },
-  { id:'holiday',  label:'Holidays' },
+  { id:'all', active:false,      label:'Everything' },
+  { id:'material', active:false, label:'Glitter & materials' },
+  { id:'season', active:false,   label:'Seasons' },
+  { id:'holiday', active:false,  label:'Holidays' },
 ];
 
 /* An array, not a single id, because a wrap band can be up to four
@@ -928,7 +1020,8 @@ const lightLabel = {
 };
 
 function bandsFor(fastenId) {
-  return BANDS.filter(function (b) { return b.fasten === fastenId; });
+  return BANDS.filter(function (b) {
+    return b.fasten === fastenId && isActive(b); });
 }
 
 function maxStrands() {
@@ -1137,11 +1230,19 @@ function inclusionCard(it, on, atLimit) {
 function renderInclusions() {
   const atLimit = chosenInclusions.length >= FREE_INCLUSIONS;
 
+  // Only categories with something in stock are worth showing at all.
+  const liveGroups = INCLUSIONS
+    .map(function (g) {
+      return { group:g.group, kind:g.kind, shape:g.shape, density:g.density,
+               items:g.items.filter(isActive) };
+    })
+    .filter(function (g) { return g.items.length; });
+
   // ---- category pills
   $('incFilter').innerHTML = INCLUSION_KINDS.map(function (k) {
     const n = k.id === 'all'
-      ? INCLUSIONS.length
-      : INCLUSIONS.filter(function (g) { return g.kind === k.id; }).length;
+      ? liveGroups.length
+      : liveGroups.filter(function (g) { return g.kind === k.id; }).length;
     return '<button class="pill' + (k.id === incFilter ? ' sel' : '') + '"' +
            ' data-act="incfilter" data-id="' + k.id + '">' +
            k.label + ' <span class="pill-n">' + n + '</span></button>';
@@ -1167,7 +1268,7 @@ function renderInclusions() {
   }
 
   // ---- the categories themselves
-  const shown = INCLUSIONS.filter(function (g) {
+  const shown = liveGroups.filter(function (g) {
     return incFilter === 'all' || g.kind === incFilter;
   });
 
@@ -1623,11 +1724,11 @@ function renderAll() {
   renderFastenings();
   renderBands();
 
-  $('metalGrid').innerHTML = METALS.map(function (o) {
+  $('metalGrid').innerHTML = METALS.filter(isActive).map(function (o) {
     return optionCard(o, 'Metal', chosenMetal, 'metal', false); }).join('');
-  $('micaGrid').innerHTML = MICA.map(function (o) {
+  $('micaGrid').innerHTML = MICA.filter(isActive).map(function (o) {
     return optionCard(o, 'Mica', chosenBackground, 'bg', true); }).join('');
-  $('inkGrid').innerHTML = INKS.map(function (o) {
+  $('inkGrid').innerHTML = INKS.filter(isActive).map(function (o) {
     return optionCard(o, 'Ink', chosenBackground, 'bg', true); }).join('');
 
   renderInclusions();
@@ -1702,6 +1803,45 @@ $('photoInput').addEventListener('change', function (e) {
 });
 
 $('photoClear').addEventListener('click', clearPhoto);
+
+/* Asks the worker for a Stripe checkout page and goes there. The worker
+   prices the order itself; whatever this page calculated is only a
+   preview, and a disagreement stops the sale rather than charging a
+   different amount. */
+function goToCheckout(summary) {
+  const btn = $('orderBtn');
+  fetch(CHECKOUT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({
+      priceVersion: PRICE_VERSION,
+      shownCents:   Math.round(priceNow() * 100),
+      bands:        chosenBands,
+      metal:        chosenMetal,
+      background:   chosenBackground,
+      inclusions:   chosenInclusions,
+      photo:        !!photoFile,
+      email:        $('orderEmail').value.trim(),
+      summary:      summary,
+    }),
+  }).then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data && data.url) { window.location.href = data.url; return; }
+      btn.disabled = false;
+      $('orderMsg').textContent = (data && data.error)
+        ? data.error + ' Your order is safe \u2014 we\u2019ll email you an invoice.'
+        : 'We couldn\u2019t open the payment page, but your order came through. ' +
+          'We\u2019ll email you an invoice.';
+      $('orderMsg').className = 'order-msg err';
+    })
+    .catch(function () {
+      btn.disabled = false;
+      $('orderMsg').textContent =
+        'We couldn\u2019t open the payment page, but your order came through. ' +
+        'We\u2019ll email you an invoice.';
+      $('orderMsg').className = 'order-msg err';
+    });
+}
 
 $('orderBtn').addEventListener('click', function () {
   // Only enforced when orders are posted; the email route carries the
@@ -1816,9 +1956,18 @@ $('orderBtn').addEventListener('click', function () {
     .then(function (data) {
       btn.disabled = false; btn.textContent = label;
       if (data && data.success) {
+        if (CHECKOUT_URL) {
+          // The order is on record; now take the payment. If checkout
+          // fails we still have the order, so nothing is lost.
+          $('orderMsg').textContent = 'Order saved \u2014 taking you to payment\u2026';
+          $('orderMsg').className = 'order-msg ok';
+          goToCheckout(lines);
+          return;
+        }
         $('orderMsg').textContent =
-          'Order received \u2014 we\u2019ll email you within a day to confirm' +
-          (photoFile ? ' and to ask for your photo.' : '.');
+          'Order received \u2014 we\u2019ll email you within a day to confirm ' +
+          'the design and send an invoice' +
+          (photoFile ? ', and to ask for your photo.' : '.');
         $('orderMsg').className = 'order-msg ok';
       } else {
         $('orderMsg').textContent =
@@ -1835,6 +1984,23 @@ $('orderBtn').addEventListener('click', function () {
       setTimeout(byEmail, 1200);
     });
 });
+
+/* Coming back from Stripe. */
+(function () {
+  const q = new URLSearchParams(location.search);
+  if (!q.has('paid') && !q.has('cancelled')) return;
+  const msg = $('orderMsg');
+  if (q.has('paid')) {
+    msg.textContent = 'Payment received \u2014 thank you. We\u2019ll email you ' +
+      'shortly to confirm, and your bracelet ships in 7 to 10 days.';
+    msg.className = 'order-msg ok';
+  } else {
+    msg.textContent = 'Payment cancelled. Your order is still with us if you ' +
+      'change your mind \u2014 nothing was charged.';
+    msg.className = 'order-msg err';
+  }
+  msg.scrollIntoView({ behavior:'smooth', block:'center' });
+})();
 
 renderAll();
 </script>
