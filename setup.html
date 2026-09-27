@@ -156,7 +156,7 @@
   }
   .day.on { background: var(--gold); color: #1a1129; border-color: var(--gold); }
 
-  /* ---------- colour picker ---------- */
+  /* ---------- color picker ---------- */
   .palette {
     display: none; gap: 8px; flex-wrap: wrap;
     margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);
@@ -168,7 +168,7 @@
   }
   .palette button.sel { border-color: var(--text); }
 
-  /* The colour wheel itself is the affordance — no icon font needed. */
+  /* The color wheel itself is the affordance — no icon font needed. */
   .picker-wrap {
     position: relative; width: 30px; height: 30px;
     border-radius: 50%; overflow: hidden; cursor: pointer;
@@ -335,10 +335,10 @@
   <section>
     <h2>2. Your Reminders</h2>
     <p class="section-note">
-      Pick a time, a colour, and how you'd like it to feel. Tap the circle to change colour.
+      Pick a time, a color, and how you'd like it to feel. Tap the circle to change color.
       <br><br>
-      <strong>About the colours:</strong> the nine shown are chosen because they stay
-      clearly different from each other on the bracelet. You can pick any colour you
+      <strong>About the colors:</strong> the nine shown are chosen because they stay
+      clearly different from each other on the bracelet. You can pick any color you
       like using the wheel, but pale shades — peach, blush, sage — come out looking
       close to white once they're glowing through the face, which makes reminders hard
       to tell apart at a glance.
@@ -393,7 +393,7 @@
 const BAUD = 115200;
 
 /* ------------------------------------------------------------------
-   The colour palette.
+   The color palette.
 
    These ten are chosen because they stay clearly distinct from each
    other on a WS2812B seen through a resin face — which is a much
@@ -401,9 +401,9 @@ const BAUD = 115200;
 
    Every one is fully saturated. Pale and pastel shades (peach, blush,
    sage) wash out to near-white on this LED, which defeats the whole
-   point of colour-coding a reminder. They are deliberately not here.
+   point of color-coding a reminder. They are deliberately not here.
 
-   The hues are spread around the colour wheel so no two sit close
+   The hues are spread around the color wheel so no two sit close
    enough to be confused at a glance on someone's wrist.
    ------------------------------------------------------------------ */
 const PRESET_COLOURS = [
@@ -418,9 +418,9 @@ const PRESET_COLOURS = [
   { hex: '#ff00aa', name: 'Magenta' },
 ];
 
-function colourName(hex) {
+function colorName(hex) {
   // Defensive: a reminder restored from an older version of this page
-  // could carry a palette index rather than a colour string.
+  // could carry a palette index rather than a color string.
   if (typeof hex !== 'string' || !hex.startsWith('#')) return 'Custom';
   const found = PRESET_COLOURS.find(c => c.hex.toLowerCase() === hex.toLowerCase());
   return found ? found.name : 'Custom';
@@ -437,7 +437,7 @@ function rgbToHex(r, g, b) {
     Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('');
 }
 
-// A WS2812B set to a very dark colour is barely visible, and through a
+// A WS2812B set to a very dark color is barely visible, and through a
 // resin face it disappears altogether. Worth telling the customer rather
 // than letting them wonder why their reminder seems not to fire.
 function isTooDark(hex) {
@@ -494,9 +494,9 @@ let nextId = 1;
 
 /* ------------------------------------------------------------------
    Labels are the customer's own words ("Morning medication"). The
-   bracelet has no room for text, so it only stores the time, colour
+   bracelet has no room for text, so it only stores the time, color
    and pattern. We keep the labels in this browser instead, matched
-   back up by time and colour when we read the bracelet.
+   back up by time and color when we read the bracelet.
 
    Consequence worth knowing: set up on one computer, edit on another,
    and the reminders come back but the labels don't.
@@ -504,7 +504,7 @@ let nextId = 1;
 const LABEL_KEY = 'lj_labels_v1';
 
 function labelKeyFor(r) {
-  return r.time + '|' + String(r.colour);
+  return r.time + '|' + String(r.color);
 }
 
 function loadLabels() {
@@ -825,7 +825,7 @@ async function loadFromBracelet() {
       id: nextId++,
       label: parts.slice(17).join(' '),
       time,
-      colour: rgbToHex(n[4], n[5], n[6]),
+      color: rgbToHex(n[4], n[5], n[6]),
       lightStyle: lightStyleIndex(n[7], n[8], n[10]),
       vibration: n[9],
       repeat: n[11],
@@ -881,7 +881,7 @@ function blankReminder() {
     id: nextId++,
     label: '',
     time: '08:00',
-    colour: '#ff0000',
+    color: '#ff0000',
     lightStyle: 0,         // index into LIGHT_STYLES
     vibration: 0,          // 0 solid, 1 pulse, 2 none
     repeat: REPEAT_DAILY,
@@ -909,7 +909,7 @@ function render() {
     box.innerHTML = `
       <div class="reminder-top">
         <button class="swatch" data-act="palette" data-id="${r.id}"
-                style="background:${r.colour}" title="Change colour"></button>
+                style="background:${r.color}" title="Change color"></button>
         <input type="text" class="reminder-title" data-act="label" data-id="${r.id}"
                placeholder="What's this for?" value="${r.label.replace(/"/g,'&quot;')}"
                style="border:none;background:none;padding:0;font-size:15px">
@@ -919,22 +919,22 @@ function render() {
 
       <div class="palette" data-palette="${r.id}">
         ${PRESET_COLOURS.map(c => `
-          <button data-act="colour" data-id="${r.id}" data-colour="${c.hex}"
-                  class="${c.hex.toLowerCase() === String(r.colour).toLowerCase() ? 'sel' : ''}"
+          <button data-act="color" data-id="${r.id}" data-color="${c.hex}"
+                  class="${c.hex.toLowerCase() === String(r.color).toLowerCase() ? 'sel' : ''}"
                   style="background:${c.hex}" title="${c.name}"></button>`).join('')}
 
-        <label class="picker-wrap" title="Custom colour — may be harder to tell apart">
-          <input type="color" data-act="colourPick" data-id="${r.id}"
-                 value="${r.colour}">
+        <label class="picker-wrap" title="Custom color — may be harder to tell apart">
+          <input type="color" data-act="colorPick" data-id="${r.id}"
+                 value="${r.color}">
         </label>
 
-        <span class="hexcode">${colourName(r.colour)}</span>
+        <span class="hexcode">${colorName(r.color)}</span>
 
-        <span class="picker-note">&#8592; any colour</span>
+        <span class="picker-note">&#8592; any color</span>
 
-        ${colourName(r.colour) === 'Custom'
+        ${colorName(r.color) === 'Custom'
           ? `<span class="dark-warn">
-               <strong>Custom colour.</strong> This may look washed out or close to
+               <strong>Custom color.</strong> This may look washed out or close to
                white on the bracelet, and harder to tell apart from your other
                reminders. The nine above are chosen to stay clearly different.
              </span>`
@@ -1017,10 +1017,10 @@ $('reminderList').addEventListener('click', e => {
       p.classList.toggle('open');
       break;
     }
-    case 'colour': {
-      // The label is filed under time+colour, so move it with the change.
+    case 'color': {
+      // The label is filed under time+color, so move it with the change.
       const oldKey = labelKeyFor(r);
-      r.colour = btn.dataset.colour;
+      r.color = btn.dataset.color;
       const labels = loadLabels();
       delete labels[oldKey];
       try { localStorage.setItem(LABEL_KEY, JSON.stringify(labels)); } catch {}
@@ -1051,9 +1051,9 @@ $('reminderList').addEventListener('input', e => {
     case 'start':     r.start = el.value; break;
     case 'vibration':  r.vibration  = Number(el.value); break;
     case 'lightStyle': r.lightStyle = Number(el.value); break;
-    case 'colourPick': {
+    case 'colorPick': {
       const oldKey = labelKeyFor(r);
-      r.colour = el.value;
+      r.color = el.value;
       const labels = loadLabels();
       delete labels[oldKey];
       try { localStorage.setItem(LABEL_KEY, JSON.stringify(labels)); } catch {}
@@ -1063,9 +1063,9 @@ $('reminderList').addEventListener('input', e => {
       const card = el.closest('.reminder');
       if (card) {
         const sw = card.querySelector('.swatch');
-        if (sw) sw.style.background = r.colour;
+        if (sw) sw.style.background = r.color;
         const hx = card.querySelector('.hexcode');
-        if (hx) hx.textContent = r.colour.toUpperCase();
+        if (hx) hx.textContent = r.color.toUpperCase();
       }
       break;
     }
@@ -1109,7 +1109,7 @@ async function saveAll() {
 
     for (const r of reminders) {
       const [hour, minute] = r.time.split(':').map(Number);
-      const [red, green, blue] = hexToRgb(r.colour);
+      const [red, green, blue] = hexToRgb(r.color);
       const [year, month, day] = r.start.split('-').map(Number);
 
       // Daily needs no day flags; the firmware ignores them.
@@ -1193,7 +1193,7 @@ if (!('serial' in navigator)) {
 // Start with one example so the page never looks empty.
 reminders.push({
   id: nextId++, label: 'Morning medication', time: '08:00',
-  colour: '#ff0000', lightStyle: 0, vibration: 0, repeat: REPEAT_DAILY, days: 0, interval: 2,
+  color: '#ff0000', lightStyle: 0, vibration: 0, repeat: REPEAT_DAILY, days: 0, interval: 2,
   start: new Date().toISOString().slice(0, 10)
 });
 render();

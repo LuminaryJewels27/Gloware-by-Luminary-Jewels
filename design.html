@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Design Your Bracelet — Luminary Jewels</title>
-<meta name="description" content="Build your own Luminary Jewels bracelet. Choose how it fastens, your band, your metal, your background colour, and what goes inside the resin — glitter, dried flowers, seasonal pieces, a name, or your own photo.">
+<meta name="description" content="Build your own Luminary Jewels bracelet. Choose how it fastens, your band, your metal, your background color, and what goes inside the resin — glitter, dried flowers, seasonal pieces, a name, or your own photo.">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -89,9 +89,14 @@
   .tier-tag { font-size:11px; margin-top:6px; display:inline-block;
               padding:2px 8px; border-radius:999px; }
   .tier-inc  { background:rgba(74,222,128,.13); color:var(--green); }
-  .tier-prem { background:rgba(251,191,36,.13); color:var(--amber); }
-  .tier-stmt { background:rgba(212,175,110,.16); color:var(--gold); }
-  .tier-sig  { background:rgba(212,175,110,.26); color:var(--gold); }
+  .tier-paid { background:rgba(212,175,110,.18); color:var(--gold); }
+  .opt-foot { display:flex; align-items:center; justify-content:space-between;
+              gap:8px; margin-top:6px; }
+  .qty-minus { width:25px; height:25px; line-height:23px; text-align:center;
+               border-radius:50%; border:1px solid var(--line);
+               background:var(--bg); color:var(--text); font-size:15px;
+               flex-shrink:0; cursor:pointer; }
+  .qty-minus:hover { border-color:var(--gold); color:var(--gold); }
   /* Shown but not pickable once the strand cap is reached. */
   .opt.dim { opacity:.4; }
   .opt.dim:hover { transform:none; border-color:var(--line); }
@@ -198,6 +203,14 @@
                 margin-top:2px; }
 
   /* Running list of picks, so they stay visible across category switches. */
+  .field-label { display:block; font-size:13px; color:var(--muted);
+                 margin:18px 0 7px; }
+  .field-help { font-size:12px; color:var(--muted); margin-top:7px;
+                line-height:1.6; }
+  .order-msg { font-size:13.5px; margin-top:12px; line-height:1.6; }
+  .order-msg.ok  { color:var(--green); }
+  .order-msg.err { color:var(--amber); }
+
   .tray { background:var(--bg-input); border-radius:9px;
           padding:13px 16px 15px; margin-bottom:22px; }
   .tray-title { font-size:11px; letter-spacing:.13em; text-transform:uppercase;
@@ -330,7 +343,7 @@
     <div class="step-head"><span class="step-num">3</span><h2>Choose your metal</h2></div>
     <p class="section-note">
       The setting your resin face sits in. All four are plated over the same steel
-      base — the steel is what holds the face on magnetically, so the colour is
+      base — the steel is what holds the face on magnetically, so the color is
       purely yours to pick.
     </p>
     <div class="grid" id="metalGrid"></div>
@@ -340,15 +353,15 @@
   <section>
     <div class="step-head"><span class="step-num">4</span><h2>Choose your background</h2></div>
     <p class="section-note">
-      The colour poured behind everything else. Mica powders give a pearly
-      shimmer; alcohol inks give clear, saturated colour.
+      The color poured behind everything else. Mica powders give a pearly
+      shimmer; alcohol inks give clear, saturated color.
     </p>
 
     <div class="callout">
       <strong>Worth knowing before you pick.</strong>
       Your reminder light shines up <em>through</em> this layer, so the background
-      tints it. Pale and pearly backgrounds let the colours come through true —
-      a green reminder still reads green. Deep colours look beautiful in daylight
+      tints it. Pale and pearly backgrounds let the colors come through true —
+      a green reminder still reads green. Deep colors look beautiful in daylight
       but filter the light: a strong blue background makes every reminder look
       blue-ish, which is exactly what you don't want when you're telling them
       apart at a glance. Each option below says how much light it lets through.
@@ -357,7 +370,7 @@
     <div class="group-title">Mica powders · pearly shimmer</div>
     <div class="grid" id="micaGrid"></div>
 
-    <div class="group-title">Alcohol inks · clear colour</div>
+    <div class="group-title">Alcohol inks · clear color</div>
     <div class="grid" id="inkGrid"></div>
   </section>
 
@@ -442,7 +455,16 @@
     </p>
 
     <textarea id="notes" rows="2"
-      placeholder="Anything else we should know? An occasion, a colour leaning, a name to spell right…"></textarea>
+      placeholder="Anything else we should know? An occasion, a color leaning, a name to spell right…"></textarea>
+
+    <!-- Needed to reply. Without it an order arrives with no way to answer. -->
+    <label class="field-label" for="orderEmail">Where should we reach you?</label>
+    <input type="email" id="orderEmail" placeholder="your@email.com">
+    <p class="field-help">
+      We’ll email to confirm your order and, if you added a photo, to ask you
+      to send it. Nothing else — no list, no newsletter.
+    </p>
+    <p class="order-msg" id="orderMsg"></p>
   </section>
 
   </div><!-- /.steps -->
@@ -502,39 +524,48 @@
    material, bought and finished separately.
    ================================================================== */
 
+/* Paste the same Web3Forms access key you put in index.html. With a key,
+   orders arrive in your inbox and in the dashboard, with every choice
+   listed. Without one, the order still reaches you — it opens the
+   customer's email app with the spec filled in, which is what it did
+   before. The difference is that a posted order can't be abandoned
+   halfway by a phone with no mail app set up. */
+const FORM_KEY = '';                       // <-- paste the access key here
+const FORM_URL = 'https://api.web3forms.com/submit';
+const CONTACT  = 'luminaryjewels27@gmail.com';
+
 const BASE_PRICE      = 79.99;
 const FREE_INCLUSIONS = 5;
 const EXTRA_COST      = 1;
 const PHOTO_COST      = 1;
 
 /* ------------------------------------------------------------------
-   BAND TIERS
+   WHAT EACH BAND ADDS
 
-   ESTIMATES. These come from typical wholesale accessory costs at a
-   2.5–3x markup, not from real quotes. Check them against what your
-   suppliers actually charge before launch and adjust `add` here —
-   nothing else in the file needs touching.
+   `add` is dollars on top of the base price. The base already covers a
+   nylon or silicone strap, which is why those are 0.
 
-     tier    material cost each    charged on top of base
-     inc     $0.50 – $4.00         $0   (absorbed into the base price)
-     prem    $4.00 – $7.00         $6
-     stmt    $2.00 – $10.00        $10
-     sig     $6.00 – $12.00        $15
+   These come from real material costs, checked September 2026:
 
-   `stmt` looks generous against material cost because chain and glass
-   bead strands take the most hand-finishing — crimping, end caps, clasps.
-   Charge for the hour, not the bead.
+     flat leather cord      $0.30-0.60 per metre, so about 25c a strand
+     nylon NATO strap       $2.00-5.60 each at factory pricing
+     decorated leather cord $1-3 per strand, bought finished
+     metal mesh strap       $5-10 each
+
+   A wrap strand is CORD, not a watch strap, and costs a fraction of one
+   — which is why four leather strands cost $8 here and not $24.
+
+   The decorated strands are bought ready-made with the pearls or stones
+   already on the cord. Nothing is strung or knotted here, which is what
+   keeps them at $3 instead of the $9 hand-knotted pearls would cost.
+
+   Adjust any single number below against your own supplier quotes.
+   Nothing else needs changing.
    ------------------------------------------------------------------ */
-const TIERS = {
-  inc:  { name:'Included',  add:0  },
-  prem: { name:'Premium',   add:6  },
-  stmt: { name:'Statement', add:10 },
-  sig:  { name:'Signature', add:15 },
-};
 
-/* Up to four strands fit through the gap under the setting. Spring-bar
-   and NATO bands are one continuous strap by construction, so they cap
-   at one. If the real gap turns out to hold three, change 4 to 3 here. */
+/* Up to four strands fit through the gap under the setting, and the same
+   strand can be chosen more than once. Spring-bar and NATO bands are one
+   continuous strap by construction, so they cap at one. */
 const MAX_STRANDS = { spring:1, nato:1, wrap:4 };
 
 /* ------------------------------------------------------------------
@@ -574,63 +605,63 @@ const FASTENINGS = [
 const BANDS = [
   /* ---- Spring bar ---- */
   { id:'sb-blk-sil',  fasten:'spring', group:'Silicone',
-    name:'Black silicone',  meta:'Soft, sporty, waterproof', img:'', tier:'inc', hex:'#1f1f24' },
+    name:'Black silicone',  meta:'Soft, sporty, waterproof', img:'', add:0, hex:'#1f1f24' },
   { id:'sb-cre-sil',  fasten:'spring', group:'Silicone',
-    name:'Cream silicone',  meta:'Soft, everyday',           img:'', tier:'inc', hex:'#e8e0d4' },
+    name:'Cream silicone',  meta:'Soft, everyday',           img:'', add:0, hex:'#e8e0d4' },
   { id:'sb-tan-lea',  fasten:'spring', group:'Leather',
-    name:'Tan leather',     meta:'Warm, classic',            img:'', tier:'prem', hex:'#b8834a' },
+    name:'Tan leather',     meta:'Warm, classic',            img:'', add:5, hex:'#b8834a' },
   { id:'sb-blk-lea',  fasten:'spring', group:'Leather',
-    name:'Black leather',   meta:'Sharp, dressy',            img:'', tier:'prem', hex:'#2a2429' },
+    name:'Black leather',   meta:'Sharp, dressy',            img:'', add:5, hex:'#2a2429' },
   { id:'sb-brn-lea',  fasten:'spring', group:'Leather',
-    name:'Brown leather',   meta:'Soft, worn-in look',       img:'', tier:'prem', hex:'#6b4530' },
+    name:'Brown leather',   meta:'Soft, worn-in look',       img:'', add:5, hex:'#6b4530' },
   { id:'sb-gld-mesh', fasten:'spring', group:'Metal mesh',
-    name:'Gold mesh',       meta:'Jewellery-first',          img:'', tier:'stmt', hex:'#d4af6a' },
+    name:'Gold mesh',       meta:'Jewellery-first',          img:'', add:8, hex:'#d4af6a' },
   { id:'sb-sil-mesh', fasten:'spring', group:'Metal mesh',
-    name:'Silver mesh',     meta:'Jewellery-first',          img:'', tier:'stmt', hex:'#c9ccd4' },
+    name:'Silver mesh',     meta:'Jewellery-first',          img:'', add:8, hex:'#c9ccd4' },
 
   /* ---- NATO: eight nylon, two leather ---- */
   { id:'na-black',   fasten:'nato', group:'Nylon NATO',
-    name:'Black',          meta:'Goes with everything',      img:'', tier:'inc', hex:'#23232a' },
+    name:'Black',          meta:'Goes with everything',      img:'', add:0, hex:'#23232a' },
   { id:'na-navy',    fasten:'nato', group:'Nylon NATO',
-    name:'Navy',           meta:'Deep, easy blue',           img:'', tier:'inc', hex:'#22345e' },
+    name:'Navy',           meta:'Deep, easy blue',           img:'', add:0, hex:'#22345e' },
   { id:'na-charcoal',fasten:'nato', group:'Nylon NATO',
-    name:'Charcoal',       meta:'Soft grey',                 img:'', tier:'inc', hex:'#444a55' },
+    name:'Charcoal',       meta:'Soft grey',                 img:'', add:0, hex:'#444a55' },
   { id:'na-stripe',  fasten:'nato', group:'Nylon NATO',
-    name:'Grey stripe',    meta:'Classic striped weave',     img:'', tier:'inc', hex:'#6e7480' },
+    name:'Grey stripe',    meta:'Classic striped weave',     img:'', add:0, hex:'#6e7480' },
   { id:'na-olive',   fasten:'nato', group:'Nylon NATO',
-    name:'Olive',          meta:'Muted green',               img:'', tier:'inc', hex:'#5f6b42' },
+    name:'Olive',          meta:'Muted green',               img:'', add:0, hex:'#5f6b42' },
   { id:'na-burg',    fasten:'nato', group:'Nylon NATO',
-    name:'Burgundy',       meta:'Deep wine red',             img:'', tier:'inc', hex:'#6e2230' },
+    name:'Burgundy',       meta:'Deep wine red',             img:'', add:0, hex:'#6e2230' },
   { id:'na-cream',   fasten:'nato', group:'Nylon NATO',
-    name:'Cream',          meta:'Pale and summery',          img:'', tier:'inc', hex:'#e2d8c6' },
+    name:'Cream',          meta:'Pale and summery',          img:'', add:0, hex:'#e2d8c6' },
   { id:'na-rose',    fasten:'nato', group:'Nylon NATO',
-    name:'Dusty rose',     meta:'Soft muted pink',           img:'', tier:'inc', hex:'#c08a8e' },
+    name:'Dusty rose',     meta:'Soft muted pink',           img:'', add:0, hex:'#c08a8e' },
   { id:'na-lea-tan', fasten:'nato', group:'Leather NATO',
-    name:'Tan leather',    meta:'Dressier than nylon',       img:'', tier:'prem', hex:'#b8834a' },
+    name:'Tan leather',    meta:'Dressier than nylon',       img:'', add:5, hex:'#b8834a' },
   { id:'na-lea-blk', fasten:'nato', group:'Leather NATO',
-    name:'Black leather',  meta:'Dressier than nylon',       img:'', tier:'prem', hex:'#2a2429' },
+    name:'Black leather',  meta:'Dressier than nylon',       img:'', add:5, hex:'#2a2429' },
 
   /* ---- Wrap: leather, then ornamental ---- */
   { id:'wr-brd-tan', fasten:'wrap', group:'Leather wrap',
-    name:'Braided tan',    meta:'Three-strand braid',        img:'', tier:'prem', hex:'#b8834a' },
+    name:'Braided tan',    meta:'Three-strand braid',        img:'', add:2, hex:'#b8834a' },
   { id:'wr-brd-brn', fasten:'wrap', group:'Leather wrap',
-    name:'Braided brown',  meta:'Three-strand braid',        img:'', tier:'prem', hex:'#6b4530' },
+    name:'Braided brown',  meta:'Three-strand braid',        img:'', add:2, hex:'#6b4530' },
   { id:'wr-brd-blk', fasten:'wrap', group:'Leather wrap',
-    name:'Braided black',  meta:'Three-strand braid',        img:'', tier:'prem', hex:'#2a2429' },
+    name:'Braided black',  meta:'Three-strand braid',        img:'', add:2, hex:'#2a2429' },
   { id:'wr-flat-tan',fasten:'wrap', group:'Leather wrap',
-    name:'Flat tan',       meta:'Single smooth strap',       img:'', tier:'prem', hex:'#c08e57' },
+    name:'Flat tan',       meta:'Single smooth strap',       img:'', add:2, hex:'#c08e57' },
   { id:'wr-suede',   fasten:'wrap', group:'Leather wrap',
-    name:'Grey suede',     meta:'Soft matte finish',         img:'', tier:'prem', hex:'#7d7a80' },
+    name:'Grey suede',     meta:'Soft matte finish',         img:'', add:2, hex:'#7d7a80' },
   { id:'wr-pearl',   fasten:'wrap', group:'Ornamental wrap',
-    name:'Freshwater pearl', meta:'Strung on silk',          img:'', tier:'sig', hex:'#f0ead8' },
+    name:'Pearl & leather',meta:'Faux pearls on leather',    img:'', add:3, hex:'#e8e0cc' },
   { id:'wr-bead',    fasten:'wrap', group:'Ornamental wrap',
-    name:'Glass bead',     meta:'Tiny faceted beads',        img:'', tier:'stmt', hex:'#9fd0da' },
+    name:'Crystal & leather',meta:'Faceted stones on leather',img:'', add:3, hex:'#9fd0da' },
   { id:'wr-chain',   fasten:'wrap', group:'Ornamental wrap',
-    name:'Chain & leather',meta:'Fine chain beside leather', img:'', tier:'stmt', hex:'#8e7a5e' },
+    name:'Chain & leather',meta:'Fine chain beside leather', img:'', add:3, hex:'#8e7a5e' },
   { id:'wr-velvet',  fasten:'wrap', group:'Ornamental wrap',
-    name:'Velvet ribbon',  meta:'Soft, dressy',              img:'', tier:'prem', hex:'#7a2f52' },
+    name:'Velvet ribbon',  meta:'Soft, dressy',              img:'', add:2, hex:'#7a2f52' },
   { id:'wr-cord',    fasten:'wrap', group:'Ornamental wrap',
-    name:'Waxed cord',     meta:'Fine, minimal',             img:'', tier:'inc', hex:'#4a3a2e' },
+    name:'Waxed cord',     meta:'Fine, minimal',             img:'', add:0, hex:'#4a3a2e' },
 ];
 
 const METALS = [
@@ -641,7 +672,7 @@ const METALS = [
 ];
 
 /* `light` says how much reminder light gets through:
-   high = colours stay true, mid = slightly tinted, low = strongly tinted. */
+   high = colors stay true, mid = slightly tinted, low = strongly tinted. */
 const MICA = [
   { id:'k-clear',   name:'Clear',        meta:'No background at all', light:'high', img:'', hex:'', sheen:true },
   { id:'k-pearl',   name:'Pearl white',  meta:'Soft milky shimmer',   light:'high', img:'', hex:'#f2ece2', sheen:true },
@@ -690,7 +721,7 @@ const INKS = [
    Set AUTO_IMAGES to true once you have photographs. Each one is looked
    up at   images/inclusions/<id>.jpg   — so the gold glitter photo is
    images/inclusions/g-gold.jpg. Anything missing quietly falls back to
-   the coloured placeholder, so you can add them a few at a time.
+   the colored placeholder, so you can add them a few at a time.
    ------------------------------------------------------------------ */
 const AUTO_IMAGES = false;
 
@@ -891,7 +922,7 @@ let wantsName = false, wantsPhoto = false;
 const $ = id => document.getElementById(id);
 
 const lightLabel = {
-  high: 'Colours stay true',
+  high: 'Colors stay true',
   mid:  'Tints the light a little',
   low:  'Strongly tints the light',
 };
@@ -904,18 +935,34 @@ function maxStrands() {
   return MAX_STRANDS[chosenFasten] || 1;
 }
 
-/* What a band adds to the price. Unknown tiers cost nothing rather than
-   NaN — a missing tier should never poison the total. */
+/* What a band adds to the price. A missing number costs nothing rather
+   than NaN — one bad entry should never poison the whole total. */
 function bandAdd(b) {
-  const t = b && TIERS[b.tier];
-  return t ? t.add : 0;
+  return (b && typeof b.add === 'number') ? b.add : 0;
 }
 
-function tierBadge(b) {
-  const t = TIERS[b.tier];
-  if (!t) return '';
-  const text = t.add ? t.name + ' · +$' + t.add : t.name;
-  return '<span class="tier-tag tier-' + b.tier + '">' + text + '</span>';
+function priceBadge(b) {
+  const add = bandAdd(b);
+  return add
+    ? '<span class="tier-tag tier-paid">+$' + add + '</span>'
+    : '<span class="tier-tag tier-inc">Included</span>';
+}
+
+/* chosenBands may hold the same id more than once, so counting is what
+   most of the rendering actually wants. */
+function countOf(id) {
+  return chosenBands.filter(function (x) { return x === id; }).length;
+}
+
+/* The chosen strands collapsed to [{band, n}], in first-picked order. */
+function bandTally() {
+  const out = [];
+  chosenBands.forEach(function (id) {
+    const found = out.find(function (e) { return e.id === id; });
+    if (found) { found.n++; return; }
+    out.push({ id:id, band:bandById(id), n:1 });
+  });
+  return out;
 }
 
 function optionCard(o, kind, chosenId, act, showLight) {
@@ -952,19 +999,27 @@ function renderFastenings() {
 
 /* Band cards differ from the others: they carry a tier badge, and for a
    wrap they are multi-select with a cap, so they get their own builder. */
-function bandCard(b, on, full) {
+function bandCard(b, n, full, canRepeat) {
   const inner = 'PHOTO<br>Band<br><strong style="color:var(--gold)">' +
                 b.name + '</strong>';
   // Greyed out, not removed: seeing the option you can't add explains
   // the limit better than a gap where a card used to be.
-  const dim = (!on && full) ? ' dim' : '';
-  return '<button class="opt' + (on ? ' sel' : '') + dim + '"' +
+  const dim = (!n && full) ? ' dim' : '';
+  // ×1 reads as clutter, so a single strand just gets a tick.
+  const mark = n ? (n > 1 ? ' \u00d7' + n : ' \u2713') : '';
+  // A span rather than a nested button, which is invalid HTML. The click
+  // handler finds the nearest [data-act], so the minus still wins.
+  const minus = (n && canRepeat)
+    ? '<span class="qty-minus" data-act="bandminus" data-id="' + b.id +
+      '" role="button" tabindex="0" title="Remove one">\u2212</span>'
+    : '';
+  return '<button class="opt' + (n ? ' sel' : '') + dim + '"' +
          ' data-act="band" data-id="' + b.id + '">' +
          '<div class="thumb">' + inner + photoTag('band', b) + '</div>' +
          '<div class="opt-body">' +
-           '<div class="opt-name">' + b.name + (on ? ' ✓' : '') + '</div>' +
+           '<div class="opt-name">' + b.name + mark + '</div>' +
            '<div class="opt-meta">' + b.meta + '</div>' +
-           tierBadge(b) +
+           '<div class="opt-foot">' + priceBadge(b) + minus + '</div>' +
          '</div></button>';
 }
 
@@ -978,22 +1033,18 @@ function renderBands() {
     return;
   }
 
-  // Legend built from the tiers present in this fastening's own bands.
-  const present = [];
-  bandsFor(chosenFasten).forEach(function (b) {
-    if (TIERS[b.tier] && present.indexOf(b.tier) < 0) present.push(b.tier);
-  });
-  const order = ['inc', 'prem', 'stmt', 'sig'];
-  const legend = order.filter(function (t) { return present.indexOf(t) >= 0; })
-    .map(function (t) {
-      return TIERS[t].add
-        ? TIERS[t].name + ' adds $' + TIERS[t].add
-        : TIERS[t].name + ' costs nothing extra';
-    });
-  $('tierNote').textContent = legend.length > 1
-    ? 'Bands are tiered by material: ' + legend.join(', ') +
-      '. The tier is on every card.'
-    : 'Every band here is included in the price.';
+  // Built from the bands actually on screen, so it never quotes a price
+  // for a material this fastening doesn't offer.
+  const paid = bandsFor(chosenFasten).filter(function (b) { return bandAdd(b); });
+  if (!paid.length) {
+    $('tierNote').textContent = 'Every band here is included in the price.';
+  } else {
+    const amounts = paid.map(bandAdd).sort(function (a, b) { return a - b; });
+    $('tierNote').textContent =
+      'Most are included in the price. The richer materials add $' +
+      amounts[0] + ' to $' + amounts[amounts.length - 1] +
+      ' \u2014 the amount is on every card.';
+  }
   $('tierNote').style.display = 'block';
 
   const fasten = FASTENINGS.find(function (f) { return f.id === chosenFasten; });
@@ -1003,8 +1054,8 @@ function renderBands() {
     ? 'Standard 20mm spring bars, so you can swap in any watch strap you already own later on.'
     : cap > 1
       ? 'Up to ' + cap + ' strands thread through the gap under the setting. ' +
-        'Mix materials freely — a plain cord next to a pearl strand reads as ' +
-        'deliberate, and costs less than four pearl strands.'
+        'Tap a strand again to add another of the same — four matching ' +
+        'leather cords is a perfectly good bracelet.'
       : fasten.name + ' bands, sized to thread under the setting.';
 
   // The strand counter only means anything when more than one can be picked.
@@ -1038,10 +1089,11 @@ function renderBands() {
   });
 
   const full = chosenBands.length >= cap;
+  const canRepeat = cap > 1;
 
   $('bandGroups').innerHTML = groups.map(function (g) {
     const cards = g.items.map(function (b) {
-      return bandCard(b, chosenBands.indexOf(b.id) >= 0, full);
+      return bandCard(b, countOf(b.id), full, canRepeat);
     }).join('');
     return '<div class="group-title">' + g.name + '</div>' +
            '<div class="grid">' + cards + '</div>';
@@ -1067,7 +1119,7 @@ function inclusionGroupOf(id) {
   return '';
 }
 
-/* The photo sits in front of the coloured swatch rather than replacing it.
+/* The photo sits in front of the colored swatch rather than replacing it.
    If the file isn't there yet the <img> removes itself on error and the
    swatch shows through, so photos can go in a few at a time. */
 function inclusionCard(it, on, atLimit) {
@@ -1174,7 +1226,9 @@ function renderSummary() {
   if (chosenBands.length) {
     const first  = bandById(chosenBands[0]);
     const fasten = FASTENINGS.find(function (f) { return f.id === first.fasten; });
-    const names  = chosenBands.map(function (id) { return bandById(id).name; });
+    const names  = bandTally().map(function (e) {
+      return (e.n > 1 ? e.n + ' \u00d7 ' : '') + e.band.name;
+    });
     parts.push(chosenBands.length === 1
       ? names[0] + ' ' + fasten.short + ' band'
       : names.join(' + ') + ' ' + fasten.short);
@@ -1436,7 +1490,7 @@ function previewBandStrands() {
   const first = -((bands.length - 1) * gap) / 2;
   return bands.map(function (b, i) {
     return { hex:b.hex || '#3a3040', w:18, x:first + i * gap };
-  });
+  });   // duplicates are real strands, so they each get drawn
 }
 
 function renderPreview() {
@@ -1491,7 +1545,7 @@ function renderPreview() {
 
   // ---- photo and name, drawn last so they sit on top as they would in life
   // The laminated photo is a small rectangle set into the resin, not a fill
-  // of the whole oval — the background colour still shows around it.
+  // of the whole oval — the background color still shows around it.
   const PW = 132, PH = 168;
   const photo = photoDataUrl
     ? '<image href="' + photoDataUrl + '" x="' + (cx - PW / 2) + '" y="' +
@@ -1552,6 +1606,7 @@ function renderPreview() {
     said.push(chosenBands.length > 1
       ? chosenBands.length + ' ' + f.short + ' strands'
       : bandById(chosenBands[0]).name + ' ' + f.short + ' band');
+    // (the strand names are listed in the summary bar below)
   }
   if (metal) said.push(metal.name.toLowerCase() + ' setting');
   if (bg)    said.push(bg.name.toLowerCase() + ' background');
@@ -1601,16 +1656,20 @@ document.addEventListener('click', function (e) {
       break;
     case 'band': {
       const id = btn.dataset.id;
-      const at = chosenBands.indexOf(id);
-      if (at >= 0) {
-        chosenBands.splice(at, 1);          // tapping a chosen strand removes it
-      } else if (maxStrands() === 1) {
-        chosenBands = [id];                 // single-strap: replace, don't stack
+      if (maxStrands() === 1) {
+        // One strap only: tapping the chosen one clears it, otherwise swap.
+        chosenBands = (chosenBands[0] === id) ? [] : [id];
       } else if (chosenBands.length < maxStrands()) {
+        // Wrap: every tap adds another of the same strand, up to the cap.
         chosenBands.push(id);
       }
-      // At the cap, a tap on an unchosen strand does nothing. The card is
-      // already dimmed, so silence is the right answer, not an alert.
+      // At the cap a tap does nothing. The card is already dimmed, so
+      // silence is the right answer, not an alert.
+      break;
+    }
+    case 'bandminus': {
+      const at = chosenBands.lastIndexOf(btn.dataset.id);
+      if (at >= 0) chosenBands.splice(at, 1);
       break;
     }
     case 'metal': chosenMetal = btn.dataset.id; break;
@@ -1645,6 +1704,20 @@ $('photoInput').addEventListener('change', function (e) {
 $('photoClear').addEventListener('click', clearPhoto);
 
 $('orderBtn').addEventListener('click', function () {
+  // Only enforced when orders are posted; the email route carries the
+  // sender's address by itself.
+  if (FORM_KEY) {
+    const addr = $('orderEmail').value.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(addr)) {
+      $('orderMsg').textContent =
+        'We need an email address to confirm your order.';
+      $('orderMsg').className = 'order-msg err';
+      $('orderEmail').scrollIntoView({ behavior:'smooth', block:'center' });
+      $('orderEmail').focus();
+      return;
+    }
+  }
+
   const bands  = chosenBands.map(bandById);
   const fasten = FASTENINGS.find(function (f) { return f.id === bands[0].fasten; });
   const metal  = METALS.find(function (m) { return m.id === chosenMetal; });
@@ -1662,10 +1735,11 @@ $('orderBtn').addEventListener('click', function () {
 
   /* One line per strand so the order is a pick list when it reaches the
      bench — whoever makes it shouldn't have to decode a summary. */
-  const bandLines = bands.map(function (b) {
-    const add = bandAdd(b);
-    return '  - ' + b.name + ' (' + b.group + ')' +
-           (add ? ' — +$' + add.toFixed(2) : '');
+  const bandLines = bandTally().map(function (e) {
+    const add = bandAdd(e.band) * e.n;
+    return '  - ' + (e.n > 1 ? e.n + ' \u00d7 ' : '') + e.band.name +
+           ' (' + e.band.group + ')' +
+           (add ? ' \u2014 +$' + add.toFixed(2) : '');
   });
 
   const extras = Math.max(0, chosenInclusions.length - FREE_INCLUSIONS);
@@ -1700,11 +1774,66 @@ $('orderBtn').addEventListener('click', function () {
     'Total: $' + priceNow().toFixed(2),
   ]).join('\n');
 
-  // No checkout yet, so this opens an email with the spec filled in.
-  // Swap for a real cart when there is one.
-  window.location.href = 'mailto:luminaryjewels27@gmail.com' +
-    '?subject=' + encodeURIComponent('Bracelet order — $' + priceNow().toFixed(2)) +
-    '&body=' + encodeURIComponent(lines);
+  const subject = 'Bracelet order \u2014 $' + priceNow().toFixed(2);
+
+  function byEmail() {
+    window.location.href = 'mailto:' + CONTACT +
+      '?subject=' + encodeURIComponent(subject) +
+      '&body=' + encodeURIComponent(lines);
+  }
+
+  // No key configured yet: behave exactly as before.
+  if (!FORM_KEY) { byEmail(); return; }
+
+  const btn = $('orderBtn');
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Sending\u2026';
+
+  fetch(FORM_URL, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+    body: JSON.stringify({
+      access_key: FORM_KEY,
+      subject: subject,
+      from_name: 'Luminary Jewels designer',
+      // The readable spec, so the email is usable as a work order as-is.
+      order: lines,
+      // The same choices as separate fields, so they are sortable later.
+      total: priceNow().toFixed(2),
+      fastening: fasten.name,
+      bands: bandTally().map(function (e) {
+        return (e.n > 1 ? e.n + ' x ' : '') + e.band.name; }).join(', '),
+      metal: metal.name,
+      background: bg.name,
+      inclusions: names.join(', ') || 'none',
+      name_on_face: (wantsName && nameValue) ? nameValue : 'no',
+      photo: photoFile ? photoFile.name : 'no',
+      notes: $('notes').value.trim() || '',
+      email: $('orderEmail').value.trim(),
+    }),
+  }).then(function (r) { return r.json(); })
+    .then(function (data) {
+      btn.disabled = false; btn.textContent = label;
+      if (data && data.success) {
+        $('orderMsg').textContent =
+          'Order received \u2014 we\u2019ll email you within a day to confirm' +
+          (photoFile ? ' and to ask for your photo.' : '.');
+        $('orderMsg').className = 'order-msg ok';
+      } else {
+        $('orderMsg').textContent =
+          'That didn\u2019t send. Opening your email app instead\u2026';
+        $('orderMsg').className = 'order-msg err';
+        setTimeout(byEmail, 1200);
+      }
+    })
+    .catch(function () {
+      btn.disabled = false; btn.textContent = label;
+      $('orderMsg').textContent =
+        'That didn\u2019t send. Opening your email app instead\u2026';
+      $('orderMsg').className = 'order-msg err';
+      setTimeout(byEmail, 1200);
+    });
 });
 
 renderAll();

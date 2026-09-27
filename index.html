@@ -338,13 +338,13 @@
         <p class="product-desc">Everything you need to begin. The smart bracelet, your choice of band, and one resin face designed by you.</p>
         <div class="product-price-row">
           <div class="product-price">
-            <span class="founding">Founding Price</span>
+            <span class="founding">Founding Price from</span>
             $79.99
             <span class="original">$99.99</span>
           </div>
           <button class="add-to-cart notify" onclick="notifyMe('Starter Kit')">Notify Me</button>
         </div>
-        <a href="design.html" class="design-link">Design yours &rarr;</a>
+        <a href="design.html" class="design-link">Design yours &amp; see your price &rarr;</a>
       </div>
     </div>
 
@@ -358,10 +358,10 @@
       </div>
       <div class="product-info">
         <h3 class="product-name">Interchangeable Resin Face</h3>
-        <p class="product-desc">Each face is hand-poured and one of a kind. Choose what goes inside it — glitter, dried flowers, gold leaf, or your own photo. Every face is the same oval, so any face fits any Luminary Jewels bracelet.</p>
+        <p class="product-desc">Each face is hand-poured and one of a kind. Choose what goes inside it — glitter, dried flowers, gold leaf, or your own photo. Every face is the same oval, so any face fits any Luminary Jewels bracelet. Five pieces inside are included; extras are $1 each.</p>
         <div class="product-price-row">
           <div class="product-price">
-            <span class="founding">Per Face</span>
+            <span class="founding">Per Face from</span>
             $22.00
           </div>
           <button class="add-to-cart notify" onclick="notifyMe('Resin Face')">Notify Me</button>
@@ -379,10 +379,10 @@
       </div>
       <div class="product-info">
         <h3 class="product-name">Interchangeable Watch Band</h3>
-        <p class="product-desc">Swap your band to match any outfit. Silicone, leather, nylon NATO, metal mesh and wrap styles — spring-bar straps, or bands that pass under the setting.</p>
+        <p class="product-desc">Swap your band to match any outfit. Nylon NATO and silicone start at $18; leather, metal mesh and decorated wrap strands cost more. Spring-bar straps, or bands that pass under the setting.</p>
         <div class="product-price-row">
           <div class="product-price">
-            <span class="founding">Per Band</span>
+            <span class="founding">Per Band from</span>
             $18.00
           </div>
           <button class="add-to-cart notify" onclick="notifyMe('Watch Band')">Notify Me</button>
@@ -458,7 +458,7 @@
       <div class="feature-number">01</div>
       <div class="feature-icon"></div>
       <h3 class="feature-title">Color-Coded Glow</h3>
-      <p class="feature-desc">Each reminder gets its own colour and its own rhythm — a quick flash, a slow pulse, or a steady glow. Nine colours, chosen because they stay clearly different from one another on your wrist.</p>
+      <p class="feature-desc">Each reminder gets its own color and its own rhythm — a quick flash, a slow pulse, or a steady glow. Nine colors, chosen because they stay clearly different from one another on your wrist.</p>
     </div>
     <div class="feature-card">
       <div class="feature-number">02</div>
@@ -554,9 +554,10 @@
   <p class="signup-desc">We're launching our founding collection of 30 bracelets. Join the list and be first to know — plus receive a founding discount when we go live.</p>
   <form class="signup-form" onsubmit="handleSignup(event)">
     <input type="email" placeholder="your@email.com" required id="email-input">
-    <button type="submit">Notify Me</button>
+    <button type="submit" id="signup-btn">Notify Me</button>
   </form>
-  <p id="signup-confirm" style="color:rgba(201,168,76,0.8);font-size:0.7rem;letter-spacing:0.1em;margin-top:1rem;min-height:1.2em;text-align:center"></p>
+  <p id="signup-interest" style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(201,168,76,0.6);margin-top:0.9rem;text-align:center;min-height:1em"></p>
+  <p id="signup-confirm" style="color:rgba(201,168,76,0.8);font-size:0.7rem;letter-spacing:0.1em;margin-top:0.6rem;min-height:1.2em;text-align:center"></p>
 </section>
 
 <!-- FOOTER -->
@@ -574,17 +575,89 @@
 </footer>
 
 <script>
-function handleSignup(e) {
-  e.preventDefault();
-  document.getElementById('signup-confirm').textContent = '✓ You\'re on the list — we\'ll be in touch soon.';
-  document.getElementById('email-input').value = '';
-}
+/* ==================================================================
+   WHERE SIGNUPS GO
+
+   Paste your Web3Forms access key between the quotes below and every
+   signup arrives in your inbox and in your Web3Forms dashboard.
+
+       https://web3forms.com  ->  enter your email  ->  copy the key
+
+   No account, no card, 250 submissions a month on the free plan.
+
+   Until a key is here, the form does NOT pretend to have saved anything.
+   It opens the visitor's email app with the message ready to send, and
+   says so. That is slower, but it never loses an address quietly.
+   ================================================================== */
+const FORM_KEY = '';                       // <-- paste the access key here
+const FORM_URL = 'https://api.web3forms.com/submit';
+const CONTACT  = 'luminaryjewels27@gmail.com';
+
+let interest = '';                         // which product they clicked
 
 function notifyMe(product) {
-  const email = prompt(`Enter your email to be notified when the ${product} is available:`);
-  if (email && email.includes('@')) {
-    alert(`✓ We'll notify you at ${email} when the ${product} is ready!`);
+  interest = product;
+  document.getElementById('signup-interest').textContent =
+    'Interested in: ' + product;
+  document.getElementById('notify').scrollIntoView({ behavior:'smooth' });
+  setTimeout(function () { document.getElementById('email-input').focus(); }, 500);
+}
+
+function say(msg, good) {
+  const el = document.getElementById('signup-confirm');
+  el.textContent = msg;
+  el.style.color = good ? 'rgba(201,168,76,0.9)' : '#c46a6a';
+}
+
+function handleSignup(e) {
+  e.preventDefault();
+  const email = document.getElementById('email-input').value.trim();
+  if (!email) return;
+
+  const btn = document.getElementById('signup-btn');
+
+  // No key yet: hand it to their mail app rather than claim a save.
+  if (!FORM_KEY) {
+    const body = 'Please add me to the founding list.\n\nEmail: ' + email +
+                 (interest ? '\nInterested in: ' + interest : '');
+    window.location.href = 'mailto:' + CONTACT +
+      '?subject=' + encodeURIComponent('Founding list — ' + email) +
+      '&body=' + encodeURIComponent(body);
+    say('Opening your email app — press send and you’re on the list.', true);
+    return;
   }
+
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = 'Sending…';
+
+  fetch(FORM_URL, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+    body: JSON.stringify({
+      access_key: FORM_KEY,
+      subject: 'Founding list signup',
+      from_name: 'Luminary Jewels website',
+      email: email,
+      interested_in: interest || 'not specified',
+      page: 'home',
+    }),
+  }).then(function (r) { return r.json(); })
+    .then(function (data) {
+      btn.disabled = false; btn.textContent = original;
+      if (data && data.success) {
+        say('✓ You’re on the list — we’ll be in touch soon.', true);
+        document.getElementById('email-input').value = '';
+        document.getElementById('signup-interest').textContent = '';
+        interest = '';
+      } else {
+        say('That didn’t go through. Please email ' + CONTACT + ' instead.', false);
+      }
+    })
+    .catch(function () {
+      btn.disabled = false; btn.textContent = original;
+      say('That didn’t go through. Please email ' + CONTACT + ' instead.', false);
+    });
 }
 </script>
 
