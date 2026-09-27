@@ -600,7 +600,7 @@ const FORM_KEY = '6a493fc0-9e4e-4e39-a275-f89d38b9dbdd';   // Web3Forms access k
    PRICE_VERSION must match the number in the worker. Bump both together
    whenever a price changes. */
 const CHECKOUT_URL  = '';
-const PRICE_VERSION = 1;
+const PRICE_VERSION = 2;
 const FORM_URL = 'https://api.web3forms.com/submit';
 const CONTACT  = 'luminaryjewels27@gmail.com';
 
@@ -730,8 +730,28 @@ const BANDS = [
     name:'Chain & leather',meta:'Fine chain beside leather', img:'', add:3, hex:'#8e7a5e' },
   { id:'wr-velvet', active:false,  fasten:'wrap', group:'Ornamental wrap',
     name:'Velvet ribbon',  meta:'Soft, dressy',              img:'', add:2, hex:'#7a2f52' },
-  { id:'wr-cord', active:true,    fasten:'wrap', group:'Ornamental wrap',
-    name:'Waxed cord',     meta:'Fine, minimal',             img:'', add:0, hex:'#4a3a2e' },
+  /* Waxed cord is the cheapest strand and the one people stack, so it gets
+     its own group rather than sitting among the ornamental ones. */
+  { id:'wr-cord', active:true, fasten:'wrap', group:'Waxed cord',
+    name:'Natural', meta:'Undyed cotton', img:'', add:0, hex:'#4a3a2e' },
+  { id:'wr-cord-red', active:true, fasten:'wrap', group:'Waxed cord',
+    name:'Red', meta:'Waxed cotton', img:'', add:0, hex:'#c03a3a' },
+  { id:'wr-cord-orange', active:true, fasten:'wrap', group:'Waxed cord',
+    name:'Orange', meta:'Waxed cotton', img:'', add:0, hex:'#e07a2f' },
+  { id:'wr-cord-yellow', active:true, fasten:'wrap', group:'Waxed cord',
+    name:'Yellow', meta:'Waxed cotton', img:'', add:0, hex:'#e8c74a' },
+  { id:'wr-cord-green', active:true, fasten:'wrap', group:'Waxed cord',
+    name:'Green', meta:'Waxed cotton', img:'', add:0, hex:'#3f8f55' },
+  { id:'wr-cord-blue', active:true, fasten:'wrap', group:'Waxed cord',
+    name:'Blue', meta:'Waxed cotton', img:'', add:0, hex:'#2f5fa8' },
+  { id:'wr-cord-purple', active:true, fasten:'wrap', group:'Waxed cord',
+    name:'Purple', meta:'Waxed cotton', img:'', add:0, hex:'#7a4a9a' },
+  { id:'wr-cord-pink', active:true, fasten:'wrap', group:'Waxed cord',
+    name:'Pink', meta:'Waxed cotton', img:'', add:0, hex:'#e07a9a' },
+  { id:'wr-cord-gold', active:true, fasten:'wrap', group:'Waxed cord',
+    name:'Gold', meta:'Metallic cord', img:'', add:0, hex:'#c9a227' },
+  { id:'wr-cord-silver', active:true, fasten:'wrap', group:'Waxed cord',
+    name:'Silver', meta:'Metallic cord', img:'', add:0, hex:'#b8bcc4' },
 ];
 
 const METALS = [
@@ -1063,11 +1083,15 @@ function optionCard(o, kind, chosenId, act, showLight) {
     ? '<span class="light-tag light-' + o.light + '">' + lightLabel[o.light] + '</span>'
     : '';
   const imgKind = act === 'metal' ? 'metal' : 'background';
-  const inner = 'PHOTO<br>' + kind +
+  // Same reasoning as the bands: the real color beats the word "PHOTO".
+  // Clear resin has no color, so that one keeps the placeholder.
+  const swatch = o.hex ? ' style="background:' + o.hex + '"' : '';
+  const inner = o.hex ? '' :
+                'PHOTO<br>' + kind +
                 '<br><strong style="color:var(--gold)">' + o.name + '</strong>';
   return '<button class="opt ' + (o.id === chosenId ? 'sel' : '') + '"' +
          ' data-act="' + act + '" data-id="' + o.id + '">' +
-         '<div class="thumb">' + inner + photoTag(imgKind, o) + '</div>' +
+         '<div class="thumb"' + swatch + '>' + inner + photoTag(imgKind, o) + '</div>' +
          '<div class="opt-body">' +
            '<div class="opt-name">' + o.name + '</div>' +
            '<div class="opt-meta">' + o.meta + '</div>' + tag +
@@ -1093,7 +1117,14 @@ function renderFastenings() {
 /* Band cards differ from the others: they carry a tier badge, and for a
    wrap they are multi-select with a cap, so they get their own builder. */
 function bandCard(b, n, full, canRepeat) {
-  const inner = 'PHOTO<br>Band<br><strong style="color:var(--gold)">' +
+  // Until there are photos, the band's own color is a far better
+  // placeholder than a grey box — nine cord colors are unreadable as
+  // "PHOTO / Band / Blue". The name is already printed underneath.
+  const swatch = b.hex
+    ? ' style="background:' + b.hex + '"'
+    : '';
+  const inner = b.hex ? '' :
+                'PHOTO<br>Band<br><strong style="color:var(--gold)">' +
                 b.name + '</strong>';
   // Greyed out, not removed: seeing the option you can't add explains
   // the limit better than a gap where a card used to be.
@@ -1108,7 +1139,7 @@ function bandCard(b, n, full, canRepeat) {
     : '';
   return '<button class="opt' + (n ? ' sel' : '') + dim + '"' +
          ' data-act="band" data-id="' + b.id + '">' +
-         '<div class="thumb">' + inner + photoTag('band', b) + '</div>' +
+         '<div class="thumb"' + swatch + '>' + inner + photoTag('band', b) + '</div>' +
          '<div class="opt-body">' +
            '<div class="opt-name">' + b.name + mark + '</div>' +
            '<div class="opt-meta">' + b.meta + '</div>' +
