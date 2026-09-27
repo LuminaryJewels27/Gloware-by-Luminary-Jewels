@@ -1525,6 +1525,46 @@ function renderPhotoPanel() {
    than alive.
    ================================================================== */
 
+/* ------------------------------------------------------------------
+   PHOTOS IN THE PREVIEW
+
+   The face is drawn, not photographed, so it can change instantly as
+   someone picks. But the two large flat areas — the resin background and
+   a full-width strap — can be real photographs once you have them, and
+   that is most of what makes it look convincing.
+
+   The elements inside stay drawn. A square photo of gold leaf scattered
+   across the face would read as a grid of little squares; making those
+   photographic would need cut-outs on transparent backgrounds, which is
+   a much harder shoot. The drawn shapes are the better answer there.
+
+   A photo can only be used once the browser confirms it exists, so each
+   one is probed once and the result remembered. A hit redraws the
+   preview; a miss is remembered so it is never asked for again.
+   ------------------------------------------------------------------ */
+const photoCache = {};          // 'band/na-black' -> url, or null if absent
+
+function previewPhoto(kind, id) {
+  if (!AUTO_IMAGES || !id) return null;
+  const key = kind + '/' + id;
+  if (key in photoCache) return photoCache[key];
+
+  photoCache[key] = null;       // assume absent until proven otherwise
+  const base = IMG_DIRS[kind] + id;
+  let i = 0;
+  const probe = new Image();
+  probe.onload = function () {
+    photoCache[key] = probe.src;
+    renderPreview();            // now that it is here, draw it
+  };
+  probe.onerror = function () {
+    i++;
+    if (i < IMG_EXTS.length) probe.src = base + IMG_EXTS[i];
+  };
+  probe.src = base + IMG_EXTS[0];
+  return null;
+}
+
 const FACE_W = 220, FACE_H = 330;        // 22 x 33mm at ten times scale
 const RESIN_RX = 92, RESIN_RY = 147;     // inside the bezel
 
@@ -1610,10 +1650,10 @@ function scatter(rand, n) {
 function previewBandStrands() {
   // Ten units to the millimetre, so a 20mm strap is 200 units wide and
   // very nearly fills the 22mm face — which is how it looks on a wrist.
-  if (!chosenBands.length) return [{ hex:'#3a3040', w:196, x:0 }];
+  if (!chosenBands.length) return [{ id:null, hex:'#3a3040', w:196, x:0 }];
   const bands = chosenBands.map(bandById).filter(Boolean);
   if (chosenFasten !== 'wrap') {
-    return [{ hex:bands[0].hex || '#3a3040', w:196, x:0 }];
+    return [{ id:bands[0].id, hex:bands[0].hex || '#3a3040', w:196, x:0 }];
   }
   // Wrap strands sit side by side under the setting — showing four thin
   // ones is the clearest way to make the four-strand choice feel real.
@@ -1621,7 +1661,7 @@ function previewBandStrands() {
   const gap = 26;
   const first = -((bands.length - 1) * gap) / 2;
   return bands.map(function (b, i) {
-    return { hex:b.hex || '#3a3040', w:18, x:first + i * gap };
+    return { id:b.id, hex:b.hex || '#3a3040', w:18, x:first + i * gap };
   });   // duplicates are real strands, so they each get drawn
 }
 
@@ -1633,9 +1673,24 @@ function renderPreview() {
   const cx = FACE_W / 2, cy = FACE_H / 2;
 
   // ---- band behind the face
-  const strands = previewBandStrands().map(function (st) {
-    return '<rect x="' + (cx + st.x - st.w / 2) + '" y="0" width="' + st.w +
-           '" height="' + FACE_H + '" rx="' + Math.min(5, st.w / 2) +
+  let strandDefs = '';
+  const strands = previewBandStrands().map(function (st, i) {
+    const x = cx + st.x - st.w / 2;
+    const r = Math.min(5, st.w / 2);
+    // Only a wide strap is worth photographing. A 1.8mm strand shows a
+    // sliver of any photo, which reads as noise rather than leather.
+    const url = st.w >= 60 ? previewPhoto('band', st.id) : null;
+    if (url) {
+      const cid = 'strapClip' + i;
+      strandDefs += '<clipPath id="' + cid + '">' +
+        '<rect x="' + x + '" y="0" width="' + st.w + '" height="' + FACE_H +
+        '" rx="' + r + '"/></clipPath>';
+      return '<image href="' + url + '" x="' + x + '" y="0" width="' + st.w +
+             '" height="' + FACE_H + '" preserveAspectRatio="xMidYMid slice" ' +
+             'clip-path="url(#' + cid + ')"/>';
+    }
+    return '<rect x="' + x + '" y="0" width="' + st.w +
+           '" height="' + FACE_H + '" rx="' + r +
            '" fill="' + st.hex + '" opacity="0.92"/>';
   }).join('');
 
@@ -1649,12 +1704,19 @@ function renderPreview() {
     resin = '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + RESIN_RX +
             '" ry="' + RESIN_RY + '" fill="#e8e4f0" opacity="0.10"/>';
   } else {
-    resin = '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + RESIN_RX +
-            '" ry="' + RESIN_RY + '" fill="' + bg.hex + '"/>' +
-            (bg.sheen
-              ? '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + RESIN_RX +
-                '" ry="' + RESIN_RY + '" fill="url(#sheen)"/>'
-              : '');
+    const bgPhoto = previewPhoto('background', bg.id);
+    // A photographed pour already has its own shimmer, so the painted
+    // sheen is dropped when a real one is in use.
+    resin = bgPhoto
+      ? '<image href="' + bgPhoto + '" x="' + (cx - RESIN_RX) + '" y="' +
+        (cy - RESIN_RY) + '" width="' + (RESIN_RX * 2) + '" height="' +
+        (RESIN_RY * 2) + '" preserveAspectRatio="xMidYMid slice"/>'
+      : '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + RESIN_RX +
+        '" ry="' + RESIN_RY + '" fill="' + bg.hex + '"/>' +
+        (bg.sheen
+          ? '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + RESIN_RX +
+            '" ry="' + RESIN_RY + '" fill="url(#sheen)"/>'
+          : '');
   }
 
   // ---- the inclusions themselves
@@ -1699,7 +1761,7 @@ function renderPreview() {
     '<svg viewBox="0 0 ' + FACE_W + ' ' + FACE_H + '" ' +
          'xmlns="http://www.w3.org/2000/svg" role="img" ' +
          'aria-label="Preview of the bracelet face you are designing">' +
-      '<defs>' +
+      '<defs>' + strandDefs +
         '<radialGradient id="sheen" cx="34%" cy="26%" r="78%">' +
           '<stop offset="0%" stop-color="#ffffff" stop-opacity="0.42"/>' +
           '<stop offset="55%" stop-color="#ffffff" stop-opacity="0.07"/>' +
